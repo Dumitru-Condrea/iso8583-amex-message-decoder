@@ -103,4 +103,30 @@ public class ValueDecoder {
         }
         return value.replace(' ', '~');
     }
+
+    public static byte[] hexToBytes(String hex) {
+        if (hex == null) {
+            throw new IllegalArgumentException("hex must not be null");
+        }
+
+        String normalized = hex.replaceAll("\\s+", "");
+        if ((normalized.length() % 2) != 0) {
+            throw new IllegalArgumentException("hex length must be even");
+        }
+
+        byte[] out = new byte[normalized.length() / 2];
+
+        for (int i = 0; i < normalized.length(); i += 2) {
+            int hi = Character.digit(normalized.charAt(i), 16);
+            int lo = Character.digit(normalized.charAt(i + 1), 16);
+
+            if (hi < 0 || lo < 0) {
+                throw new IllegalArgumentException("invalid hex character at position " + i);
+            }
+
+            out[i / 2] = (byte) ((hi << 4) | lo);
+        }
+
+        return out;
+    }
 }

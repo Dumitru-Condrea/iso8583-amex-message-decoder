@@ -155,7 +155,7 @@ public class Amex1100Mapper implements MessageMapper<Amex1100Message> {
     }
 
     private AcceptanceEnvironmentData mapAcceptanceEnvironmentData(DecodedMessage decodedMessage) {
-        if (decodedMessage.getFlatValue("PAYMENT_ACCOUNT_DATA") == null) {
+        if (decodedMessage.getFlatValue("ACCEPTANCE_ENVIRONMENT_DATA") == null) {
             return null;
         }
 
