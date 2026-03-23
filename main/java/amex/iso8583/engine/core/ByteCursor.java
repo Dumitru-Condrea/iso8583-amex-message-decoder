@@ -34,6 +34,19 @@ public class ByteCursor {
         return source[position++];
     }
 
+    public byte peek() {
+        ensureAvailable(1);
+        return source[position];
+    }
+
+    public byte peek(int offset) {
+        if (offset < 0) {
+            throw new IllegalArgumentException("offset must be >= 0");
+        }
+        ensureAvailable(offset + 1);
+        return source[position + offset];
+    }
+
     public byte[] readBytes(int length) {
         if (length < 0) {
             throw new IllegalArgumentException("length must be >= 0");

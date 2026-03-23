@@ -407,7 +407,7 @@ public class Amex1100Definition implements MessageDefinition<Amex1100Message> {
 
         list.add(SubfieldDefinition.builder()
                 .subfieldNumber(-1)
-                .name("SICC_RELATED_DATA.ICC_HEADER_VERSION_NAME")
+                .name("ICC_RELATED_DATA.ICC_HEADER_VERSION_NAME")
                 .presence(FieldPresence.OPTIONAL)
                 .dataEncoding(DataEncoding.EBCDIC)
                 .valueFormat(FieldValueFormat.TEXT)
@@ -447,7 +447,7 @@ public class Amex1100Definition implements MessageDefinition<Amex1100Message> {
                 .presence(FieldPresence.OPTIONAL)
                 .dataEncoding(DataEncoding.BINARY)
                 .valueFormat(FieldValueFormat.HEX_STRING)
-                .lengthType(LengthType.LLVAR)
+                .lengthType(LengthType.LVAR)
                 .lengthEncoding(LengthEncoding.BCD)
                 .lengthUnit(LengthUnit.BYTES)
                 .maxLength(33)

@@ -23,6 +23,8 @@ public class LengthReader {
         switch (lengthType) {
             case FIXED:
                 return null;
+            case LVAR:
+                return parseLength(cursor.readBytes(1), lengthEncoding);
             case LLVAR:
                 return parseLength(cursor.readBytes(2), lengthEncoding);
             case LLLVAR:

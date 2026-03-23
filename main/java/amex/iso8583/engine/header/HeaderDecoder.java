@@ -36,7 +36,7 @@ public class HeaderDecoder {
             throw new IllegalArgumentException("Only binary bitmap is currently supported");
         }
 
-        byte[] primary = cursor.readBytes(8);
+        byte[] primary = readBitmapBytes(cursor, 8);
         String primaryHex = valueDecoder.toHex(primary);
 
         boolean hasSecondary = isBitSet(primary, 1);
@@ -48,12 +48,66 @@ public class HeaderDecoder {
                 throw new IllegalArgumentException("Secondary bitmap detected but not allowed by profile");
             }
 
-            secondary = cursor.readBytes(8);
+            secondary = readBitmapBytes(cursor, 8);
             secondaryHex = valueDecoder.toHex(secondary);
         }
 
         List<Integer> activeFields = collectActiveFields(primary, secondary);
         return new BitmapSet(primaryHex, secondaryHex, activeFields);
+    }
+
+    private byte[] readBitmapBytes(ByteCursor cursor, int logicalByteCount) {
+        byte[] bitmap = new byte[logicalByteCount];
+        int out = 0;
+
+        while (out < logicalByteCount) {
+            if (isEscapedHexByte(cursor)) {
+                bitmap[out++] = readEscapedHexByte(cursor);
+            } else {
+                bitmap[out++] = cursor.readByte();
+            }
+        }
+
+        return bitmap;
+    }
+
+    private boolean isEscapedHexByte(ByteCursor cursor) {
+        if (cursor.remaining() < 4) {
+            return false;
+        }
+
+        byte b0 = cursor.peek(0);
+        byte b1 = cursor.peek(1);
+        byte b2 = cursor.peek(2);
+        byte b3 = cursor.peek(3);
+
+        return b0 == '{'
+                && b3 == '}'
+                && isHexByte(b1)
+                && isHexByte(b2);
+    }
+
+    private byte readEscapedHexByte(ByteCursor cursor) {
+        cursor.readByte();
+        byte h1 = cursor.readByte();
+        byte h2 = cursor.readByte();
+        cursor.readByte();
+
+        int hi = Character.digit((char) h1, 16);
+        int lo = Character.digit((char) h2, 16);
+
+        if (hi < 0 || lo < 0) {
+            throw new IllegalArgumentException("Invalid escaped bitmap byte");
+        }
+
+        return (byte) ((hi << 4) | lo);
+    }
+
+    private boolean isHexByte(byte value) {
+        char c = (char) value;
+        return (c >= '0' && c <= '9')
+                || (c >= 'A' && c <= 'F')
+                || (c >= 'a' && c <= 'f');
     }
 
     private List<Integer> collectActiveFields(byte[] primary, byte[] secondary) {
