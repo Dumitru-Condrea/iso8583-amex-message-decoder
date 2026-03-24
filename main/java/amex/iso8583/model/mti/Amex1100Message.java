@@ -5,16 +5,18 @@ import amex.iso8583.model.field.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @AllArgsConstructor
 public class Amex1100Message implements AmexMessage {
 
     private final String mti;
-    private final String pan;
+    private final PrimaryAccountNumber pan;
     private final String processingCode;
     private final String amountTransaction;
     private final String stan;
-    private final String dateTimeLocalTransaction;
+    private final LocalDateTime dateTimeLocalTransaction;
     private final String dateExpiration;
     private final String countryCodeAcquiringInstitution;
     private final PosDataCode posDataCode;

@@ -3,6 +3,7 @@ package amex.iso8583.engine.mapping;
 import amex.iso8583.engine.core.DecodedMessage;
 import amex.iso8583.model.field.*;
 import amex.iso8583.model.mti.Amex1100Message;
+import amex.iso8583.util.ParserUtils;
 
 public class Amex1100Mapper implements MessageMapper<Amex1100Message> {
 
@@ -14,11 +15,11 @@ public class Amex1100Mapper implements MessageMapper<Amex1100Message> {
 
         return new Amex1100Message(
                 decodedMessage.getMti(),
-                decodedMessage.getFlatValue("PAN"),
+                ParserUtils.parseMaskedPanValue(decodedMessage.getFlatValue("PAN")),
                 decodedMessage.getFlatValue("PROCESSING_CODE"),
                 decodedMessage.getFlatValue("AMOUNT_TRANSACTION"),
                 decodedMessage.getFlatValue("STAN"),
-                decodedMessage.getFlatValue("DATE_TIME_LOCAL_TRANSACTION"),
+                ParserUtils.parseDateTime(decodedMessage.getFlatValue("DATE_TIME_LOCAL_TRANSACTION")),
                 decodedMessage.getFlatValue("DATE_EXPIRATION"),
                 decodedMessage.getFlatValue("COUNTRY_CODE_ACQUIRING_INSTITUTION"),
                 mapPosDataCode(decodedMessage),
