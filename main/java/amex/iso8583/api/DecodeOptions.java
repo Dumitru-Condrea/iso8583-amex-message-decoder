@@ -7,77 +7,34 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Getter
-public class DecodeOptions {
+public final class DecodeOptions {
 
-    private final Map<String, Object> flags;
+    private final Map<String, Object> values;
 
-    public DecodeOptions(Map<String, Object> flags) {
-        this.flags = Collections.unmodifiableMap(
-                new LinkedHashMap<String, Object>(
-                        flags == null ? Collections.<String, Object>emptyMap() : flags
-                )
-        );
+    private DecodeOptions(Map<String, Object> values) {
+        this.values = Collections.unmodifiableMap(values);
     }
 
     public static DecodeOptions empty() {
-        return new DecodeOptions(Collections.<String, Object>emptyMap());
+        return new DecodeOptions(new LinkedHashMap<>());
     }
 
-    public boolean hasFlag(String key) {
-        return flags.containsKey(key);
+    public DecodeOptions with(String key, Object value) {
+        LinkedHashMap<String, Object> copy = new LinkedHashMap<>(this.values);
+        copy.put(key, value);
+        return new DecodeOptions(copy);
     }
 
     public Object get(String key) {
-        return flags.get(key);
+        return values.get(key);
     }
 
-    public String getString(String key) {
-        Object value = flags.get(key);
-        return value == null ? null : String.valueOf(value);
+    public boolean has(String key) {
+        return values.containsKey(key);
     }
 
-    public boolean getBoolean(String key) {
-        Object value = flags.get(key);
-
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
-        if (value instanceof String) {
-            return Boolean.parseBoolean((String) value);
-        }
-        return false;
-    }
-
-    public Integer getInteger(String key) {
-        Object value = flags.get(key);
-
-        if (value instanceof Integer) {
-            return (Integer) value;
-        }
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        if (value instanceof String) {
-            return Integer.valueOf((String) value);
-        }
-        return null;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
-        private final Map<String, Object> flags = new LinkedHashMap<String, Object>();
-
-        public Builder flag(String key, Object value) {
-            flags.put(key, value);
-            return this;
-        }
-
-        public DecodeOptions build() {
-            return new DecodeOptions(flags);
-        }
+    public Map<String, Object> asMap() {
+        return values;
     }
 }
 

@@ -9,6 +9,7 @@ import amex.iso8583.engine.field.CompositeFieldDecoder;
 import amex.iso8583.engine.field.PrimitiveFieldDecoder;
 import amex.iso8583.engine.header.BitmapSet;
 import amex.iso8583.engine.header.HeaderDecoder;
+import amex.iso8583.engine.header.MessageHeaderProfile;
 import amex.iso8583.engine.mapping.MessageMapper;
 import amex.iso8583.engine.value.LengthReader;
 import amex.iso8583.engine.value.ValueDecoder;
@@ -63,7 +64,11 @@ public class AmexDecoder {
 
         ByteCursor cursor = new ByteCursor(rawMessage);
 
-        String mti = headerDecoder.readMti(cursor, amex.iso8583.engine.header.MessageHeaderProfile.amexDefault());
+        String mti = headerDecoder.readMti(
+                cursor,
+                MessageHeaderProfile.amexDefault()
+        );
+
         MessageDefinition<? extends AmexMessage> definition = registry.getRequired(mti);
 
         return decodeInternal(rawMessage, definition, options);
@@ -145,6 +150,10 @@ public class AmexDecoder {
     }
 
     private FieldDefinition applyAdjuster(FieldDefinition baseDefinition, DecodeOptions options) {
+        if (baseDefinition == null) {
+            return null;
+        }
+
         if (baseDefinition.getAdjuster() == null) {
             return baseDefinition;
         }

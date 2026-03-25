@@ -8,7 +8,7 @@ public final class NoOpFieldDefinitionAdjuster implements FieldDefinitionAdjuste
     public static final NoOpFieldDefinitionAdjuster INSTANCE = new NoOpFieldDefinitionAdjuster();
 
     @Override
-    public FieldDefinition adjust(FieldDefinition baseDefinition, DecodeOptions options) {
-        return baseDefinition;
+    public FieldDefinition adjust(FieldDefinition fieldDefinition, DecodeOptions options) {
+        return fieldDefinition;
     }
 }

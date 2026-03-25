@@ -10,10 +10,7 @@ import amex.iso8583.schema.common.FieldValueFormat;
 import amex.iso8583.schema.common.LengthEncoding;
 import amex.iso8583.schema.common.LengthType;
 import amex.iso8583.schema.common.LengthUnit;
-import amex.iso8583.schema.definition.CompositeFieldDefinition;
-import amex.iso8583.schema.definition.FieldDefinition;
-import amex.iso8583.schema.definition.MessageDefinition;
-import amex.iso8583.schema.definition.SubfieldDefinition;
+import amex.iso8583.schema.definition.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -279,6 +276,7 @@ public class Amex1100Definition implements MessageDefinition<Amex1100Message> {
                 .lengthEncoding(LengthEncoding.EBCDIC)
                 .lengthUnit(LengthUnit.BYTES)
                 .maxLength(256)
+                .adjuster(new IccRelatedDataFieldDefinitionAdjuster())
                 .subfields(iccRelatedDataSubfields())
                 .build());
 
@@ -320,7 +318,6 @@ public class Amex1100Definition implements MessageDefinition<Amex1100Message> {
                 .maxLength(205)
                 .subfields(addressVerificationSubFields())
                 .build());
-
 
         map.put(112, CompositeFieldDefinition.builder()
                 .number(112)
