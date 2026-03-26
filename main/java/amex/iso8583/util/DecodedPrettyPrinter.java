@@ -5,9 +5,7 @@ import amex.iso8583.engine.core.DecodedFieldMeta;
 import amex.iso8583.model.common.AmexMessage;
 import amex.iso8583.schema.definition.CompositeFieldDefinition;
 import amex.iso8583.schema.definition.FieldDefinition;
-import amex.iso8583.schema.definition.MessageDefinition;
 import amex.iso8583.schema.definition.SubfieldDefinition;
-import amex.iso8583.schema.registry.MessageDefinitionsRegistry;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -92,9 +90,6 @@ public final class DecodedPrettyPrinter {
     private static final String IND_SUB = spaces(COL_SUBFIELD);
     private static final String IND_SUB_DASH_SAME_COL = spaces(Math.max(0, COL_SUBFIELD - 2)) + "- ";
 
-    private DecodedPrettyPrinter() {
-    }
-
     public static void setAnsiMode(AnsiMode mode) {
         setPalette(mode == AnsiMode.ON ? new AnsiPalette() : new PlainPalette());
     }
@@ -109,34 +104,7 @@ public final class DecodedPrettyPrinter {
             PrintStream out,
             List<String> highlights
     ) {
-        print(result, rawMessage, MessageDefinitionsRegistry.defaultRegistry(), out, highlights);
-    }
-
-    public static void print(
-            DecodedAmexResult<? extends AmexMessage> result,
-            byte[] rawMessage,
-            MessageDefinitionsRegistry registry,
-            PrintStream out,
-            List<String> highlights
-    ) {
         Objects.requireNonNull(result, "result");
-        Objects.requireNonNull(registry, "registry");
-
-        @SuppressWarnings("unchecked")
-        MessageDefinition<? extends AmexMessage> definition = registry.getRequired(result.getMessage().getMti());
-
-        print(result, rawMessage, definition, out, highlights);
-    }
-
-    public static void print(
-            DecodedAmexResult<? extends AmexMessage> result,
-            byte[] rawMessage,
-            MessageDefinition<? extends AmexMessage> definition,
-            PrintStream out,
-            List<String> highlights
-    ) {
-        Objects.requireNonNull(result, "result");
-        Objects.requireNonNull(definition, "definition");
 
         if (out == null) {
             out = System.out;
@@ -145,7 +113,9 @@ public final class DecodedPrettyPrinter {
         Map<String, String> decodedMap = result.getFlatValues();
         String mti = result.getMessage().getMti();
 
-        LinkedHashMap<String, String> businessKeyToPid = buildBusinessKeyToPid(definition);
+        LinkedHashMap<String, String> businessKeyToPid =
+                buildBusinessKeyToPid(result.getEffectiveFieldDefinitions());
+
         LinkedHashMap<String, String> pidToBusiness = new LinkedHashMap<>();
 
         for (Map.Entry<String, String> e : businessKeyToPid.entrySet()) {
@@ -175,13 +145,13 @@ public final class DecodedPrettyPrinter {
         out.println(repeat('-', 95));
     }
 
-    private static LinkedHashMap<String, String> buildBusinessKeyToPid(MessageDefinition<? extends AmexMessage> definition) {
+    private static LinkedHashMap<String, String> buildBusinessKeyToPid(Map<Integer, FieldDefinition> fieldDefinitions) {
         LinkedHashMap<String, String> out = new LinkedHashMap<>();
-        List<Integer> keys = new ArrayList<>(definition.getFieldDefinitions().keySet());
+        List<Integer> keys = new ArrayList<>(fieldDefinitions.keySet());
         Collections.sort(keys);
 
         for (Integer fieldNumber : keys) {
-            FieldDefinition fieldDefinition = definition.getFieldDefinitions().get(fieldNumber);
+            FieldDefinition fieldDefinition = fieldDefinitions.get(fieldNumber);
             String parentPid = "P" + fieldDefinition.getNumber();
             out.put(fieldDefinition.getName(), parentPid);
 

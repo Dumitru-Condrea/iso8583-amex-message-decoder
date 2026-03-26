@@ -105,6 +105,7 @@ public class AmexDecoder {
         Map<Integer, DecodedField> decodedFields = new LinkedHashMap<>();
         Map<String, String> flatValues = new LinkedHashMap<>();
         Map<Integer, DecodedFieldMeta> fieldMeta = new LinkedHashMap<>();
+        Map<Integer, FieldDefinition> effectiveFieldDefinitions = new LinkedHashMap<>();
 
         flatValues.put("MESSAGE_TYPE_IDENTIFIER", mti);
         flatValues.put("PRIMARY_BITMAP", bitmapSet.getPrimaryHex());
@@ -127,6 +128,8 @@ public class AmexDecoder {
             }
 
             FieldDefinition effectiveDefinition = applyAdjuster(baseDefinition, options);
+            effectiveFieldDefinitions.put(fieldNumber, effectiveDefinition);
+
             DecodedField decodedField = decodeField(cursor, effectiveDefinition, options);
 
             decodedFields.put(fieldNumber, decodedField);
@@ -146,7 +149,7 @@ public class AmexDecoder {
 
         T typedMessage = mapTypedMessage(definition.getMapper(), decodedMessage);
 
-        return new DecodedAmexResult<T>(typedMessage, flatValues, fieldMeta);
+        return new DecodedAmexResult<>(typedMessage, flatValues, fieldMeta, effectiveFieldDefinitions);
     }
 
     private FieldDefinition applyAdjuster(FieldDefinition baseDefinition, DecodeOptions options) {

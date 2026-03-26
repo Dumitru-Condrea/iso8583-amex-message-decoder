@@ -47,4 +47,94 @@ public class DecodeRunner {
                 java.util.Arrays.asList("MTI", "PRIMARY_BITMAP", "SECONDARY_BITMAP", "PAN", "POS_DATA_CODE", "p112.1")
         );
     }
+
+    @When("^I execute the DB \"([^\"]*)\" query and validate the values$")
+    public void iExecuteTheHostMessageQueryAndValidateValues(String dbQuery, DataTable dataTable) throws Throwable {
+        String transRef = lastResponse.getTransactionReference();
+        String enterpriseName = lastResponse.getRequester().getEnterpriseID();
+
+        Properties properties = TestData.getPropertyDetails("DB");
+        String queryFromConfig = properties.getProperty(dbQuery);
+
+        if (queryFromConfig == null || queryFromConfig.trim().isEmpty()) {
+            throw new IllegalArgumentException("DB query not found in properties for key: " + dbQuery);
+        }
+
+        String preparedQuery = queryFromConfig
+                .replace("transRef", transRef)
+                .replace("tableName", enterpriseName);
+
+        System.out.println(preparedQuery);
+
+        try (ResultSet rs = dbConnection.executeQuery(preparedQuery)) {
+            if (!rs.next()) {
+                Assert.fail("Query returned no rows: " + preparedQuery);
+            }
+
+            List<List<String>> rows = dataTable.asLists(String.class);
+
+            for (List<String> row : rows) {
+                if (row.size() < 3) {
+                    Assert.fail("Each datatable row must contain at least 3 values: columnName | operator | expectedValue");
+                }
+
+                String columnName = row.get(0);
+                String operator = row.get(1) == null ? "" : row.get(1).trim();
+                String expectedValue = row.get(2);
+
+                Object dbValueObject = rs.getObject(columnName);
+                String actualValue = dbValueObject == null ? null : String.valueOf(dbValueObject);
+
+                switch (operator.toLowerCase()) {
+                    case "isnull":
+                        Assert.assertNull(
+                                "Actual value must be null for column: " + columnName + ", but was: " + actualValue,
+                                dbValueObject
+                        );
+                        break;
+
+                    case "isnotnull":
+                        Assert.assertNotNull(
+                                "Actual value must NOT be null for column: " + columnName,
+                                dbValueObject
+                        );
+                        break;
+
+                    case "contains":
+                        Assert.assertNotNull(
+                                "Actual value is null, so it cannot contain: " + expectedValue + " for column: " + columnName,
+                                actualValue
+                        );
+                        Assert.assertTrue(
+                                "Actual value must contain: " + expectedValue + ", but was: " + actualValue,
+                                actualValue.contains(expectedValue)
+                        );
+                        break;
+
+                    case "startswith":
+                        Assert.assertNotNull(
+                                "Actual value is null, so it cannot start with: " + expectedValue + " for column: " + columnName,
+                                actualValue
+                        );
+                        Assert.assertTrue(
+                                "Actual value must start with: " + expectedValue + ", but was: " + actualValue,
+                                actualValue.startsWith(expectedValue)
+                        );
+                        break;
+
+                    case "equals":
+                    case "":
+                        Assert.assertEquals(
+                                "Actual value must be equal to: " + expectedValue + ", but was: " + actualValue,
+                                actualValue,
+                                expectedValue
+                        );
+                        break;
+
+                    default:
+                        Assert.fail("Unsupported operator: " + operator + " for column: " + columnName);
+                }
+            }
+        }
+    }
 }
