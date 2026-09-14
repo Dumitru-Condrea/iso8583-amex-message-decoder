@@ -1,8 +1,12 @@
+import java.util.HashMap;
+import java.util.Map;
+
 public final class ApiRequest {
 
     private final Map<String, String> headers = new HashMap<>();
     private final Map<String, Object> queryParams = new HashMap<>();
     private final Map<String, Object> formParams = new HashMap<>();
+    private final Map<String, Object> multipartParams = new HashMap<>();
 
     private Object body;
 
@@ -32,6 +36,11 @@ public final class ApiRequest {
         return this;
     }
 
+    public ApiRequest multipart(String name, Object value) {
+        multipartParams.put(name, value);
+        return this;
+    }
+
     public ApiRequest body(Object body) {
         this.body = body;
         return this;
@@ -58,6 +67,10 @@ public final class ApiRequest {
 
     Map<String, Object> formParams() {
         return formParams;
+    }
+
+    Map<String, Object> multipartParams() {
+        return multipartParams;
     }
 
     Object body() {
