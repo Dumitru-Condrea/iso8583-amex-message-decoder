@@ -32,43 +32,46 @@ public final class RestClient {
         return ApiResponseMapper.from(response);
     }
 
-    private void apply(
-            RequestSpecification specification,
-            ApiRequest request) {
+   private void apply(
+        RequestSpecification specification,
+        ApiRequest request) {
 
-        if (!request.headers().isEmpty()) {
-            specification.headers(request.headers());
-        }
+    if (!request.headers().isEmpty()) {
+        specification.headers(request.headers());
+    }
 
-        if (!request.queryParams().isEmpty()) {
-            specification.queryParams(request.queryParams());
-        }
+    if (!request.queryParams().isEmpty()) {
+        specification.queryParams(request.queryParams());
+    }
 
-        if (!request.formParams().isEmpty()) {
-            request.formParams().forEach(
-                    specification::multiPart
-            );
-        }
+    if (!request.formParams().isEmpty()) {
+        specification.formParams(request.formParams());
+    }
 
-        if (request.body() != null) {
-            specification
-                    .contentType(ContentType.JSON)
-                    .body(request.body());
-        }
+    if (!request.multipartParams().isEmpty()) {
+        request.multipartParams()
+                .forEach(specification::multiPart);
+    }
 
-        if (request.username() != null) {
-            specification
-                    .auth()
-                    .preemptive()
-                    .basic(
-                            request.username(),
-                            request.password()
-                    );
-        }
+    if (request.body() != null) {
+        specification
+                .contentType(ContentType.JSON)
+                .body(request.body());
+    }
 
-        if (request.bearerToken() != null) {
-            specification.auth()
-                    .oauth2(request.bearerToken());
-        }
+    if (request.username() != null) {
+        specification
+                .auth()
+                .preemptive()
+                .basic(
+                        request.username(),
+                        request.password()
+                );
+    }
+
+    if (request.bearerToken() != null) {
+        specification
+                .auth()
+                .oauth2(request.bearerToken());
     }
 }
