@@ -1,9 +1,3 @@
-package your.package.api.auth;
-
-import your.package.api.client.ApiRequest;
-import your.package.api.client.ApiResponse;
-import your.package.api.client.RestClient;
-
 public final class AuthClient {
 
     private static final String TOKEN_ENDPOINT = "/oauth/token";
@@ -16,15 +10,51 @@ public final class AuthClient {
         this.baseUrl = baseUrl;
     }
 
-    public ApiResponse getToken(String username, String password) {
+    public AuthToken getToken(String username, String password) {
 
-        ApiRequest request = ApiRequest.request()
+        ApiRequest request = ApiRequest.builder()
                 .basicAuth(username, password)
-                .multipart("grant_type", "client_credentials");
+                .multipart("grant_type", "client_credentials")
+                .build();
 
-        return restClient.post(
+        ApiResponse response = restClient.post(
                 baseUrl + TOKEN_ENDPOINT,
                 request
         );
+
+        validateTokenResponse(response);
+
+        String accessToken = response
+                .json()
+                .path("access_token")
+                .asText();
+
+        long expiresIn = response
+                .json()
+                .path("expires_in")
+                .asLong();
+
+        return new AuthToken(
+                accessToken,
+                expiresIn
+        );
+    }
+
+    private void validateTokenResponse(ApiResponse response) {
+
+        if (response.getStatusCode() != 200) {
+            throw new IllegalStateException(
+                    "Failed to retrieve auth token. Status code: "
+                            + response.getStatusCode()
+                            + ", response: "
+                            + response.getBody()
+            );
+        }
+
+        if (!response.json().hasNonNull("access_token")) {
+            throw new IllegalStateException(
+                    "Authentication response does not contain access_token"
+            );
+        }
     }
 }
