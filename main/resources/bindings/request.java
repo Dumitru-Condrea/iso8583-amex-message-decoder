@@ -1,91 +1,104 @@
-import java.util.HashMap;
-import java.util.Map;
-
+@Getter
 public final class ApiRequest {
 
-    private final Map<String, String> headers = new HashMap<>();
-    private final Map<String, Object> queryParams = new HashMap<>();
-    private final Map<String, Object> formParams = new HashMap<>();
-    private final Map<String, Object> multipartParams = new HashMap<>();
+    private final Map<String, String> headers;
+    private final Map<String, Object> queryParams;
+    private final Map<String, Object> formParams;
+    private final Map<String, Object> multipartParams;
 
-    private Object body;
+    private final Object body;
 
-    private String username;
-    private String password;
-    private String bearerToken;
+    private final String username;
+    private final String password;
+    private final String bearerToken;
 
-    private ApiRequest() {
+    private ApiRequest(Builder builder) {
+        this.headers = builder.headers;
+        this.queryParams = builder.queryParams;
+        this.formParams = builder.formParams;
+        this.multipartParams = builder.multipartParams;
+
+        this.body = builder.body;
+
+        this.username = builder.username;
+        this.password = builder.password;
+        this.bearerToken = builder.bearerToken;
     }
 
-    public static ApiRequest request() {
-        return new ApiRequest();
+    public static Builder builder() {
+        return new Builder();
     }
 
-    public ApiRequest header(String name, String value) {
-        headers.put(name, value);
-        return this;
-    }
+    public static final class Builder {
 
-    public ApiRequest queryParam(String name, Object value) {
-        queryParams.put(name, value);
-        return this;
-    }
+        private final Map<String, String> headers = new HashMap<>();
+        private final Map<String, Object> queryParams = new HashMap<>();
+        private final Map<String, Object> formParams = new HashMap<>();
+        private final Map<String, Object> multipartParams = new HashMap<>();
 
-    public ApiRequest formParam(String name, Object value) {
-        formParams.put(name, value);
-        return this;
-    }
+        private Object body;
 
-    public ApiRequest multipart(String name, Object value) {
-        multipartParams.put(name, value);
-        return this;
-    }
+        private String username;
+        private String password;
+        private String bearerToken;
 
-    public ApiRequest body(Object body) {
-        this.body = body;
-        return this;
-    }
+        private Builder() {
+        }
 
-    public ApiRequest basicAuth(String username, String password) {
-        this.username = username;
-        this.password = password;
-        return this;
-    }
+        public Builder header(String name, String value) {
+            headers.put(name, value);
+            return this;
+        }
 
-    public ApiRequest bearerAuth(String token) {
-        this.bearerToken = token;
-        return this;
-    }
+        public Builder queryParam(String name, Object value) {
+            queryParams.put(name, value);
+            return this;
+        }
 
-    Map<String, String> headers() {
-        return headers;
-    }
+        public Builder formParam(String name, Object value) {
+            formParams.put(name, value);
+            return this;
+        }
 
-    Map<String, Object> queryParams() {
-        return queryParams;
-    }
+        public Builder multipart(String name, Object value) {
+            multipartParams.put(name, value);
+            return this;
+        }
 
-    Map<String, Object> formParams() {
-        return formParams;
-    }
+        public Builder body(Object body) {
+            this.body = body;
+            return this;
+        }
 
-    Map<String, Object> multipartParams() {
-        return multipartParams;
-    }
+        public Builder basicAuth(String username, String password) {
+            requireNotNull(username, "Username must not be null");
+            requireNotNull(password, "Password must not be null");
 
-    Object body() {
-        return body;
-    }
+            this.username = username;
+            this.password = password;
+            this.bearerToken = null;
 
-    String username() {
-        return username;
-    }
+            return this;
+        }
 
-    String password() {
-        return password;
-    }
+        public Builder bearerAuth(String token) {
+            requireNotNull(token, "Bearer token must not be null");
 
-    String bearerToken() {
-        return bearerToken;
+            this.bearerToken = token;
+            this.username = null;
+            this.password = null;
+
+            return this;
+        }
+
+        public ApiRequest build() {
+            return new ApiRequest(this);
+        }
+
+        private static void requireNotNull(Object value, String message) {
+            if (value == null) {
+                throw new IllegalArgumentException(message);
+            }
+        }
     }
 }
