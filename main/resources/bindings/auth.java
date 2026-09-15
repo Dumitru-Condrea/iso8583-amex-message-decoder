@@ -22,25 +22,19 @@ public final class AuthClient {
                 request
         );
 
-        validateTokenResponse(response);
+        JsonNode body = response.json();
 
-        String accessToken = response
-                .json()
-                .path("access_token")
-                .asText();
-
-        long expiresIn = response
-                .json()
-                .path("expires_in")
-                .asLong();
+        validateTokenResponse(response, body);
 
         return new AuthToken(
-                accessToken,
-                expiresIn
+                body.path("access_token").asText(),
+                body.path("expires_in").asLong()
         );
     }
 
-    private void validateTokenResponse(ApiResponse response) {
+    private void validateTokenResponse(
+            ApiResponse response,
+            JsonNode body) {
 
         if (response.getStatusCode() != 200) {
             throw new IllegalStateException(
@@ -51,7 +45,9 @@ public final class AuthClient {
             );
         }
 
-        if (!response.json().hasNonNull("access_token")) {
+        if (!body.hasNonNull("access_token")
+                || body.path("access_token").asText().isEmpty()) {
+
             throw new IllegalStateException(
                     "Authentication response does not contain access_token"
             );
