@@ -5,26 +5,22 @@ public final class JsonUtils {
     private JsonUtils() {
     }
 
-    public static JsonNode read(String json) {
-        try {
-            return MAPPER.readTree(json);
-        } catch (IOException e) {
+    public static JsonNode jsonNode(Object... values) {
+        if (values.length % 2 != 0) {
             throw new IllegalArgumentException(
-                    "Failed to parse JSON",
-                    e
+                    "Arguments must be passed as key-value pairs"
             );
         }
-    }
 
-    public static <T> T read(String json, Class<T> type) {
-        try {
-            return MAPPER.readValue(json, type);
-        } catch (IOException e) {
-            throw new IllegalArgumentException(
-                    "Failed to deserialize JSON to "
-                            + type.getSimpleName(),
-                    e
-            );
+        ObjectNode node = MAPPER.createObjectNode();
+
+        for (int i = 0; i < values.length; i += 2) {
+            String key = String.valueOf(values[i]);
+            Object value = values[i + 1];
+
+            node.replace(key, MAPPER.valueToTree(value));
         }
+
+        return node;
     }
 }
