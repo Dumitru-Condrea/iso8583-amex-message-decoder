@@ -1,3 +1,10 @@
+package your.package.api.client;
+
+import lombok.Getter;
+
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 public final class ApiRequest {
 
@@ -31,10 +38,17 @@ public final class ApiRequest {
 
     public static final class Builder {
 
-        private final Map<String, String> headers = new HashMap<>();
-        private final Map<String, Object> queryParams = new HashMap<>();
-        private final Map<String, Object> formParams = new HashMap<>();
-        private final Map<String, Object> multipartParams = new HashMap<>();
+        private final Map<String, String> headers =
+                new HashMap<>();
+
+        private final Map<String, Object> queryParams =
+                new HashMap<>();
+
+        private final Map<String, Object> formParams =
+                new HashMap<>();
+
+        private final Map<String, Object> multipartParams =
+                new HashMap<>();
 
         private Object body;
 
@@ -45,22 +59,34 @@ public final class ApiRequest {
         private Builder() {
         }
 
-        public Builder header(String name, String value) {
+        public Builder header(
+                String name,
+                String value) {
+
             headers.put(name, value);
             return this;
         }
 
-        public Builder queryParam(String name, Object value) {
+        public Builder queryParam(
+                String name,
+                Object value) {
+
             queryParams.put(name, value);
             return this;
         }
 
-        public Builder formParam(String name, Object value) {
+        public Builder formParam(
+                String name,
+                Object value) {
+
             formParams.put(name, value);
             return this;
         }
 
-        public Builder multipart(String name, Object value) {
+        public Builder multipart(
+                String name,
+                Object value) {
+
             multipartParams.put(name, value);
             return this;
         }
@@ -70,9 +96,19 @@ public final class ApiRequest {
             return this;
         }
 
-        public Builder basicAuth(String username, String password) {
-            requireNotNull(username, "Username must not be null");
-            requireNotNull(password, "Password must not be null");
+        public Builder basicAuth(
+                String username,
+                String password) {
+
+            requireNotNull(
+                    username,
+                    "Username must not be null"
+            );
+
+            requireNotNull(
+                    password,
+                    "Password must not be null"
+            );
 
             this.username = username;
             this.password = password;
@@ -82,7 +118,11 @@ public final class ApiRequest {
         }
 
         public Builder bearerAuth(String token) {
-            requireNotNull(token, "Bearer token must not be null");
+
+            requireNotNull(
+                    token,
+                    "Bearer token must not be null"
+            );
 
             this.bearerToken = token;
             this.username = null;
@@ -95,7 +135,10 @@ public final class ApiRequest {
             return new ApiRequest(this);
         }
 
-        private static void requireNotNull(Object value, String message) {
+        private static void requireNotNull(
+                Object value,
+                String message) {
+
             if (value == null) {
                 throw new IllegalArgumentException(message);
             }
