@@ -1,19 +1,55 @@
+package your.package.api.client;
+
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.http.Method;
+import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+
 public final class RestClient {
 
-    public ApiResponse get(String url, ApiRequest request) {
-        return execute(Method.GET, url, request);
+    public ApiResponse get(
+            String url,
+            ApiRequest request) {
+
+        return execute(
+                Method.GET,
+                url,
+                request
+        );
     }
 
-    public ApiResponse post(String url, ApiRequest request) {
-        return execute(Method.POST, url, request);
+    public ApiResponse post(
+            String url,
+            ApiRequest request) {
+
+        return execute(
+                Method.POST,
+                url,
+                request
+        );
     }
 
-    public ApiResponse put(String url, ApiRequest request) {
-        return execute(Method.PUT, url, request);
+    public ApiResponse put(
+            String url,
+            ApiRequest request) {
+
+        return execute(
+                Method.PUT,
+                url,
+                request
+        );
     }
 
-    public ApiResponse delete(String url, ApiRequest request) {
-        return execute(Method.DELETE, url, request);
+    public ApiResponse delete(
+            String url,
+            ApiRequest request) {
+
+        return execute(
+                Method.DELETE,
+                url,
+                request
+        );
     }
 
     private ApiResponse execute(
@@ -24,54 +60,72 @@ public final class RestClient {
         RequestSpecification specification =
                 RestAssured.given();
 
-        apply(specification, request);
+        apply(
+                specification,
+                request
+        );
 
         Response response =
-                specification.request(method, url);
+                specification.request(
+                        method,
+                        url
+                );
 
         return ApiResponseMapper.from(response);
     }
 
-   private void apply(
-        RequestSpecification specification,
-        ApiRequest request) {
+    private void apply(
+            RequestSpecification specification,
+            ApiRequest request) {
 
-    if (!request.headers().isEmpty()) {
-        specification.headers(request.headers());
-    }
+        if (!request.getHeaders().isEmpty()) {
+            specification.headers(
+                    request.getHeaders()
+            );
+        }
 
-    if (!request.queryParams().isEmpty()) {
-        specification.queryParams(request.queryParams());
-    }
+        if (!request.getQueryParams().isEmpty()) {
+            specification.queryParams(
+                    request.getQueryParams()
+            );
+        }
 
-    if (!request.formParams().isEmpty()) {
-        specification.formParams(request.formParams());
-    }
+        if (!request.getFormParams().isEmpty()) {
+            specification.formParams(
+                    request.getFormParams()
+            );
+        }
 
-    if (!request.multipartParams().isEmpty()) {
-        request.multipartParams()
-                .forEach(specification::multiPart);
-    }
+        if (!request.getMultipartParams().isEmpty()) {
+            request
+                    .getMultipartParams()
+                    .forEach(
+                            specification::multiPart
+                    );
+        }
 
-    if (request.body() != null) {
-        specification
-                .contentType(ContentType.JSON)
-                .body(request.body());
-    }
+        if (request.getBody() != null) {
+            specification
+                    .contentType(ContentType.JSON)
+                    .body(request.getBody());
+        }
 
-    if (request.username() != null) {
-        specification
-                .auth()
-                .preemptive()
-                .basic(
-                        request.username(),
-                        request.password()
-                );
-    }
+        if (request.getUsername() != null) {
+            specification
+                    .auth()
+                    .preemptive()
+                    .basic(
+                            request.getUsername(),
+                            request.getPassword()
+                    );
+        }
 
-    if (request.bearerToken() != null) {
-        specification
-                .auth()
-                .oauth2(request.bearerToken());
+        if (request.getBearerToken() != null) {
+            specification.header(
+                    "Authorization",
+                    "Bearer "
+                            + request.getBearerToken()
+            );
+        }
     }
 }
