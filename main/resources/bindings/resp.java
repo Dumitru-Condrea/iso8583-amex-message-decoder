@@ -1,3 +1,13 @@
+package your.package.api.client;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.Getter;
+import your.package.api.json.JsonUtils;
+
+import java.util.List;
+import java.util.Map;
+
+@Getter
 public final class ApiResponse {
 
     private final int statusCode;
@@ -14,20 +24,10 @@ public final class ApiResponse {
         this.headers = headers;
     }
 
-    public int statusCode() {
-        return statusCode;
-    }
-
-    public String body() {
-        return body;
-    }
-
-    public Map<String, List<String>> headers() {
-        return headers;
-    }
-
     public String header(String name) {
-        List<String> values = headers.get(name);
+
+        List<String> values =
+                headers.get(name);
 
         return values == null || values.isEmpty()
                 ? null
@@ -35,7 +35,8 @@ public final class ApiResponse {
     }
 
     public boolean isSuccessful() {
-        return statusCode >= 200 && statusCode < 300;
+        return statusCode >= 200
+                && statusCode < 300;
     }
 
     public JsonNode json() {
