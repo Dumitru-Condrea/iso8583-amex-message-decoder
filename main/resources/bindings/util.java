@@ -24,3 +24,34 @@ public final class JsonUtils {
         return node;
     }
 }
+
+
+
+
+
+
+
+
+
+
+public static JsonNode readResource(String path) {
+
+    try (InputStream inputStream = JsonUtils.class
+            .getClassLoader()
+            .getResourceAsStream(path)) {
+
+        if (inputStream == null) {
+            throw new IllegalArgumentException(
+                    "JSON resource not found: " + path
+            );
+        }
+
+        return MAPPER.readTree(inputStream);
+
+    } catch (IOException e) {
+        throw new IllegalStateException(
+                "Failed to read JSON resource: " + path,
+                e
+        );
+    }
+}
