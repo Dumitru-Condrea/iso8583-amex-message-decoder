@@ -1,5 +1,3 @@
-package your.package.api.client;
-
 import lombok.Getter;
 
 import java.util.HashMap;
@@ -20,10 +18,10 @@ public final class ApiRequest {
     private final String bearerToken;
 
     private ApiRequest(Builder builder) {
-        this.headers = builder.headers;
-        this.queryParams = builder.queryParams;
-        this.formParams = builder.formParams;
-        this.multipartParams = builder.multipartParams;
+        this.headers = new HashMap<>(builder.headers);
+        this.queryParams = new HashMap<>(builder.queryParams);
+        this.formParams = new HashMap<>(builder.formParams);
+        this.multipartParams = new HashMap<>(builder.multipartParams);
 
         this.body = builder.body;
 
@@ -36,19 +34,16 @@ public final class ApiRequest {
         return new Builder();
     }
 
+    public Builder toBuilder() {
+        return new Builder(this);
+    }
+
     public static final class Builder {
 
-        private final Map<String, String> headers =
-                new HashMap<>();
-
-        private final Map<String, Object> queryParams =
-                new HashMap<>();
-
-        private final Map<String, Object> formParams =
-                new HashMap<>();
-
-        private final Map<String, Object> multipartParams =
-                new HashMap<>();
+        private final Map<String, String> headers;
+        private final Map<String, Object> queryParams;
+        private final Map<String, Object> formParams;
+        private final Map<String, Object> multipartParams;
 
         private Object body;
 
@@ -57,6 +52,23 @@ public final class ApiRequest {
         private String bearerToken;
 
         private Builder() {
+            this.headers = new HashMap<>();
+            this.queryParams = new HashMap<>();
+            this.formParams = new HashMap<>();
+            this.multipartParams = new HashMap<>();
+        }
+
+        private Builder(ApiRequest request) {
+            this.headers = new HashMap<>(request.headers);
+            this.queryParams = new HashMap<>(request.queryParams);
+            this.formParams = new HashMap<>(request.formParams);
+            this.multipartParams = new HashMap<>(request.multipartParams);
+
+            this.body = request.body;
+
+            this.username = request.username;
+            this.password = request.password;
+            this.bearerToken = request.bearerToken;
         }
 
         public Builder header(
