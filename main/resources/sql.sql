@@ -1,34 +1,19 @@
-DECLARE
-    v_token_ids SYS.ODCINUMBERLIST := SYS.ODCINUMBERLIST();
-BEGIN
-    SELECT DISTINCT tl.TOKEN_ID
-    BULK COLLECT INTO v_token_ids
-    FROM EMV_TOKENISATION.TOKENS_LOOKUP tl
-    WHERE tl.TOKEN_OWNER_ID = ?;
+private static String loadQueryTemplate(String resource) {
+    ClassLoader classLoader =
+            TokenCleanupService.class.getClassLoader();
 
-    DELETE
-    FROM EMV_TOKENISATION.TOKEN_ATTRIBUTES
-    WHERE TOKEN_ID IN (
-        SELECT COLUMN_VALUE
-        FROM TABLE(v_token_ids)
-    );
+    try (InputStream inputStream =
+                 classLoader.getResourceAsStream(resource)) {
 
-    DELETE
-    FROM EMV_TOKENISATION.TOKENS_LOOKUP
-    WHERE TOKEN_ID IN (
-        SELECT COLUMN_VALUE
-        FROM TABLE(v_token_ids)
-    );
+        if (inputStream == null) {
+            throw new IllegalStateException(
+                    "SQL resource not found: " + resource
+            );
+        }
 
-    DELETE
-    FROM EMV_TOKENISATION.TOKENS
-    WHERE ID IN (
-        SELECT COLUMN_VALUE
-        FROM TABLE(v_token_ids)
-    );
-
-    OPEN ? FOR
-        SELECT COLUMN_VALUE AS TOKEN_ID
-        FROM TABLE(v_token_ids)
-        ORDER BY COLUMN_VALUE;
-END;
+        return IOUtils.toString(
+                inputStream,
+                StandardCharsets.UTF_8
+        );
+    }
+}
