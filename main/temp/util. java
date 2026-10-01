@@ -1,0 +1,11 @@
+private static LocalDateTime getLocalDateTime(
+        ResultSet rs,
+        String column
+) throws SQLException {
+
+    Timestamp timestamp = rs.getTimestamp(column);
+
+    return timestamp == null
+            ? null
+            : timestamp.toLocalDateTime();
+}
