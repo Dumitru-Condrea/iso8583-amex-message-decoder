@@ -1,17 +1,12 @@
-public static <E extends Enum<E>> E getEnum(
-        ResultSet rs,
-        String column,
-        Class<E> enumClass
-) throws SQLException {
+  public static <T> T toEntity(
+            ResultSet resultSet,
+            ResultSetMapper<T> mapper
+    ) throws SQLException {
 
-    String value = rs.getString(column);
+        if (resultSet.next()) {
+            return mapper.map(resultSet);
+        }
 
-    if (value == null) {
         return null;
     }
-
-    return Enum.valueOf(
-            enumClass,
-            value.trim().toUpperCase(Locale.ROOT)
-    );
 }
