@@ -1,41 +1,17 @@
-private static LocalDateTime getLocalDateTime(
+public static <E extends Enum<E>> E getEnum(
         ResultSet rs,
-        String column
-) throws SQLException {
-
-    Timestamp timestamp = rs.getTimestamp(column);
-
-    return timestamp == null
-            ? null
-            : timestamp.toLocalDateTime();
-}
-
-
-public enum TokenStatus {
-
-    ACTIVE,
-    INACTIVE,
-    DELETED;
-
-    public static TokenStatus fromDbValue(String value) {
-        if (value == null) {
-            return null;
-        }
-
-        return TokenStatus.valueOf(
-                value.trim().toUpperCase()
-        );
-
-
-public static YearMonth getYearMonth(
-        ResultSet rs,
-        String column
+        String column,
+        Class<E> enumClass
 ) throws SQLException {
 
     String value = rs.getString(column);
 
-    return value == null
-            ? null
-            : YearMonth.parse(value);
+    if (value == null) {
+        return null;
+    }
+
+    return Enum.valueOf(
+            enumClass,
+            value.trim().toUpperCase(Locale.ROOT)
+    );
 }
- 
