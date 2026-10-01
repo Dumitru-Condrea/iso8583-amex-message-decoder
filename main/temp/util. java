@@ -1,101 +1,19 @@
-// ==========================================
-// LIST VALUE
-// ==========================================
+public static byte[] getBlobBytes(
+        ResultSet resultSet,
+        String columnName) throws SQLException {
 
-public <T> List<T> getList(
-        ContextKey key,
-        Class<T> elementType) {
+    Blob blob = resultSet.getBlob(columnName);
 
-    Object value = values.get(key);
-
-    if (value == null) {
+    if (blob == null) {
         return null;
     }
 
-    return castList(
-            key,
-            value,
-            elementType
-    );
-}
-
-public <T> List<T> requireList(
-        ContextKey key,
-        Class<T> elementType) {
-
-    List<T> value = getList(
-            key,
-            elementType
-    );
-
-    if (value == null) {
-        throw new IllegalStateException(
-                "No context value found for key: " + key
+    try {
+        return blob.getBytes(
+                1,
+                Math.toIntExact(blob.length())
         );
+    } finally {
+        blob.free();
     }
-
-    return value;
-}
-
-
-// ==========================================
-// TYPE VALIDATION
-// ==========================================
-
-private <T> void validateType(
-        ContextKey key,
-        Object value,
-        Class<T> type) {
-
-    if (!type.isInstance(value)) {
-
-        throw new IllegalStateException(
-                "Context value for key '"
-                        + key
-                        + "' is "
-                        + value.getClass().getSimpleName()
-                        + ", expected "
-                        + type.getSimpleName()
-        );
-    }
-}
-
-private <T> List<T> castList(
-        ContextKey key,
-        Object value,
-        Class<T> elementType) {
-
-    if (!(value instanceof List)) {
-
-        throw new IllegalStateException(
-                "Context value for key '"
-                        + key
-                        + "' is "
-                        + value.getClass().getSimpleName()
-                        + ", expected List"
-        );
-    }
-
-    List<?> list = (List<?>) value;
-
-    for (Object element : list) {
-
-        if (element != null
-                && !elementType.isInstance(element)) {
-
-            throw new IllegalStateException(
-                    "Context list for key '"
-                            + key
-                            + "' contains "
-                            + element.getClass().getSimpleName()
-                            + ", expected "
-                            + elementType.getSimpleName()
-            );
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    List<T> typedList = (List<T>) list;
-
-    return typedList;
 }
