@@ -25,4 +25,17 @@ public enum TokenStatus {
         return TokenStatus.valueOf(
                 value.trim().toUpperCase()
         );
+
+
+public static YearMonth getYearMonth(
+        ResultSet rs,
+        String column
+) throws SQLException {
+
+    String value = rs.getString(column);
+
+    return value == null
+            ? null
+            : YearMonth.parse(value);
+}
  
