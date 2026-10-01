@@ -9,3 +9,20 @@ private static LocalDateTime getLocalDateTime(
             ? null
             : timestamp.toLocalDateTime();
 }
+
+
+public enum TokenStatus {
+
+    ACTIVE,
+    INACTIVE,
+    DELETED;
+
+    public static TokenStatus fromDbValue(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        return TokenStatus.valueOf(
+                value.trim().toUpperCase()
+        );
+ 
