@@ -1,10 +1,17 @@
-package com.barclaycard.systemtest.emv.gateway.db.utils;
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class JdbcUtils {
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
+    public static <T> List<T> toList(
+            ResultSet resultSet,
+            ResultSetMapper<T> mapper
+    ) throws SQLException {
 
-@FunctionalInterface
-public interface ResultSetMapper<T> {
+        List<T> result = new ArrayList<>();
 
-    T map(ResultSet resultSet) throws SQLException;
+        while (resultSet.next()) {
+            result.add(mapper.map(resultSet));
+        }
+
+        return result;
+    }
 }
