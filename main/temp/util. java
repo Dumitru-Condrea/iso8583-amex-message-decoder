@@ -1,12 +1,45 @@
-  public static <T> T toEntity(
-            ResultSet resultSet,
-            ResultSetMapper<T> mapper
-    ) throws SQLException {
+public <T> List<T> requireList(
+        ContextKey key,
+        Class<T> elementType) {
 
-        if (resultSet.next()) {
-            return mapper.map(resultSet);
-        }
+    Object value = values.get(key);
 
-        return null;
+    if (value == null) {
+        throw new IllegalStateException(
+                "No context value found for key: " + key
+        );
     }
+
+    if (!(value instanceof List)) {
+        throw new IllegalStateException(
+                "Context value for key '"
+                        + key
+                        + "' is "
+                        + value.getClass().getSimpleName()
+                        + ", expected List"
+        );
+    }
+
+    List<?> list = (List<?>) value;
+
+    for (Object element : list) {
+
+        if (element != null
+                && !elementType.isInstance(element)) {
+
+            throw new IllegalStateException(
+                    "Context list for key '"
+                            + key
+                            + "' contains "
+                            + element.getClass().getSimpleName()
+                            + ", expected "
+                            + elementType.getSimpleName()
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    List<T> typedList = (List<T>) list;
+
+    return typedList;
 }
