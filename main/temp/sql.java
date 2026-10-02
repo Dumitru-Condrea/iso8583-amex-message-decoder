@@ -1,45 +1,27 @@
-public static <T> List<T> select(
-            Connection connection,
-            String query,
-            ResultSetMapper<T> mapper
-    ) throws SQLException {
+public static String getString(
+        ResultSet resultSet,
+        String column
+) throws SQLException {
 
-        try (PreparedStatement statement =
-                     connection.prepareStatement(query);
-             ResultSet resultSet =
-                     statement.executeQuery()) {
+    if (!hasColumn(resultSet, column)) {
+        return null;
+    }
 
-            return toList(resultSet, mapper);
+    return resultSet.getString(column);
+}
+
+public static boolean hasColumn(
+        ResultSet resultSet,
+        String column
+) throws SQLException {
+
+    ResultSetMetaData metaData = resultSet.getMetaData();
+
+    for (int i = 1; i <= metaData.getColumnCount(); i++) {
+        if (column.equalsIgnoreCase(metaData.getColumnLabel(i))) {
+            return true;
         }
     }
 
-    public static int update(
-            Connection connection,
-            String query
-    ) throws SQLException {
-
-        boolean autoCommit = connection.getAutoCommit();
-
-        try {
-            connection.setAutoCommit(false);
-
-            int affectedRows;
-
-            try (PreparedStatement statement =
-                         connection.prepareStatement(query)) {
-
-                affectedRows = statement.executeUpdate();
-            }
-
-            connection.commit();
-
-            return affectedRows;
-
-        } catch (SQLException exception) {
-            connection.rollback();
-            throw exception;
-
-        } finally {
-            connection.setAutoCommit(autoCommit);
-        }
-    }
+    return false;
+}
