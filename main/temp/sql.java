@@ -1,58 +1,45 @@
-public static String replaceSqlValues(
-        String sql,
-        String placeholder,
-        Object... values
-) {
-    if (sql == null || placeholder == null) {
-        throw new IllegalArgumentException(
-                "SQL and placeholder cannot be null"
-        );
+public static <T> List<T> select(
+            Connection connection,
+            String query,
+            ResultSetMapper<T> mapper
+    ) throws SQLException {
+
+        try (PreparedStatement statement =
+                     connection.prepareStatement(query);
+             ResultSet resultSet =
+                     statement.executeQuery()) {
+
+            return toList(resultSet, mapper);
+        }
     }
 
-    if (!sql.contains(placeholder)) {
-        throw new IllegalArgumentException(
-                "SQL placeholder not found: " + placeholder
-        );
+    public static int update(
+            Connection connection,
+            String query
+    ) throws SQLException {
+
+        boolean autoCommit = connection.getAutoCommit();
+
+        try {
+            connection.setAutoCommit(false);
+
+            int affectedRows;
+
+            try (PreparedStatement statement =
+                         connection.prepareStatement(query)) {
+
+                affectedRows = statement.executeUpdate();
+            }
+
+            connection.commit();
+
+            return affectedRows;
+
+        } catch (SQLException exception) {
+            connection.rollback();
+            throw exception;
+
+        } finally {
+            connection.setAutoCommit(autoCommit);
+        }
     }
-
-    if (values == null || values.length == 0) {
-        throw new IllegalArgumentException(
-                "SQL values cannot be empty"
-        );
-    }
-
-    String replacement = Arrays.stream(values)
-            .map(value -> {
-                if (value == null) {
-                    return "NULL";
-                }
-
-                if (value instanceof String) {
-                    return "'" +
-                            ((String) value).replace("'", "''") +
-                            "'";
-                }
-
-                if (value instanceof Enum<?>) {
-                    return "'" +
-                            ((Enum<?>) value).name() +
-                            "'";
-                }
-
-                if (value instanceof Number) {
-                    return value.toString();
-                }
-
-                if (value instanceof Boolean) {
-                    return (Boolean) value ? "1" : "0";
-                }
-
-                throw new IllegalArgumentException(
-                        "Unsupported SQL value type: "
-                                + value.getClass().getName()
-                );
-            })
-            .collect(Collectors.joining(", "));
-
-    return sql.replace(placeholder, replacement);
-}
