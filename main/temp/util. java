@@ -1,19 +1,13 @@
-public static byte[] getBlobBytes(
-        ResultSet resultSet,
-        String columnName) throws SQLException {
+public static String sql(String... lines) {
+    StringBuilder builder = new StringBuilder();
 
-    Blob blob = resultSet.getBlob(columnName);
+    for (String line : lines) {
+        if (builder.length() > 0) {
+            builder.append(System.lineSeparator());
+        }
 
-    if (blob == null) {
-        return null;
+        builder.append(line);
     }
 
-    try {
-        return blob.getBytes(
-                1,
-                Math.toIntExact(blob.length())
-        );
-    } finally {
-        blob.free();
-    }
+    return builder.toString();
 }
