@@ -1,0 +1,17 @@
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class DateTimeUtils {
+
+    public static LocalDateTime toDatabaseTime(
+            LocalDateTime dateTime,
+            ZoneId databaseZone
+    ) {
+        if (dateTime == null) {
+            return null;
+        }
+
+        return dateTime
+                .atZone(ZoneId.systemDefault())
+                .withZoneSameInstant(databaseZone)
+                .toLocalDateTime();
+    }
+}
