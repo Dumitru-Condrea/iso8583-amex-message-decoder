@@ -7,43 +7,37 @@ public final class WireMockStateManager {
     private final WireMockClient client;
 
     /*
-     * null  -> lifecycle не запускался
-     * true  -> original state = true
-     * false -> original state = false
+     * null  -> snapshot ещё не был создан
+     * true  -> original WireMock state = true
+     * false -> original WireMock state = false
      */
     private Boolean originalState;
 
     /*
-     * true только если была предпринята
-     * попытка изменить environment.
+     * Показывает, выполнялось ли хотя бы одно
+     * изменение WireMock state после snapshot.
      */
     private boolean restoreRequired;
 
     private WireMockStateManager() {
-
-        this.client =
-                ApiClients.wiremock();
+        this.client = ApiClients.wiremock();
     }
 
     public static void apply(
             boolean requiredState) {
 
-        Holder.INSTANCE
-                .applyInternal(
-                        requiredState
-                );
+        Holder.INSTANCE.applyInternal(
+                requiredState
+        );
     }
 
     public static void restore() {
 
-        Holder.INSTANCE
-                .restoreInternal();
+        Holder.INSTANCE.restoreInternal();
     }
 
     private void applyInternal(
             boolean requiredState) {
-
-        ensureCleanState();
 
         /*
          * Internally:
@@ -55,25 +49,28 @@ public final class WireMockStateManager {
                 client.getState();
 
         /*
-         * Capture snapshot.
+         * Capture only the very first state.
+         *
+         * Repeated apply() calls must not overwrite
+         * the original snapshot.
          */
-        originalState =
-                currentState;
+        if (!hasSnapshot()) {
+            originalState = currentState;
+        }
 
         /*
-         * Environment already has
-         * the required state.
+         * Nothing needs to be changed.
          */
         if (currentState == requiredState) {
             return;
         }
 
         /*
-         * Set BEFORE updateState().
+         * Mark before the HTTP operation.
          *
-         * If server applies SET but HTTP call
-         * fails afterwards, @After will still
-         * attempt to restore the snapshot.
+         * If SET succeeds on the server but the client
+         * fails afterwards, restore() will still attempt
+         * to return the original state.
          */
         restoreRequired = true;
 
@@ -91,11 +88,12 @@ public final class WireMockStateManager {
     private void restoreInternal() {
 
         /*
-         * apply() wasn't called.
+         * apply() was never called.
          *
-         * Safe no-op.
+         * For example, scenario had no
+         * @wiremock.active:* tag.
          */
-        if (originalState == null) {
+        if (!hasSnapshot()) {
             return;
         }
 
@@ -120,15 +118,8 @@ public final class WireMockStateManager {
         }
     }
 
-    private void ensureCleanState() {
-
-        if (originalState != null) {
-
-            throw new IllegalStateException(
-                    "WireMock state snapshot "
-                            + "already exists"
-            );
-        }
+    private boolean hasSnapshot() {
+        return originalState != null;
     }
 
     private void clear() {
