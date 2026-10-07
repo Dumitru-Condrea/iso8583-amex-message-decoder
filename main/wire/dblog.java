@@ -1,13 +1,14 @@
 package your.package.db.logging;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DbLogger {
 
     private static final DateTimeFormatter TIMESTAMP_FORMAT =
@@ -15,24 +16,24 @@ public final class DbLogger {
                     "yyyy-MM-dd HH:mm:ss.SSS"
             );
 
-    public void select(
+    public static void select(
             String sql,
-            ResultSet resultSet) {
+            int rowsFound) {
 
         String message =
                 "========== DB SELECT ==========\n"
                         + "Query:\n"
                         + sql
                         + "\n\n"
-                        + "Rows found : "
-                        + getRowCount(resultSet)
+                        + "Rows found    : "
+                        + rowsFound
                         + "\n"
                         + "==============================";
 
         info(message);
     }
 
-    public void update(
+    public static void update(
             String sql,
             int rowsAffected) {
 
@@ -49,7 +50,7 @@ public final class DbLogger {
         info(message);
     }
 
-    public void error(
+    public static void error(
             String sql,
             Exception exception) {
 
@@ -72,56 +73,7 @@ public final class DbLogger {
         );
     }
 
-    private int getRowCount(
-            ResultSet resultSet) {
-
-        if (resultSet == null) {
-            return 0;
-        }
-
-        try {
-
-            int currentRow =
-                    resultSet.getRow();
-
-            boolean beforeFirst =
-                    resultSet.isBeforeFirst();
-
-            boolean afterLast =
-                    resultSet.isAfterLast();
-
-            resultSet.last();
-
-            int count =
-                    resultSet.getRow();
-
-            if (beforeFirst) {
-
-                resultSet.beforeFirst();
-
-            } else if (afterLast) {
-
-                resultSet.afterLast();
-
-            } else if (currentRow > 0) {
-
-                resultSet.absolute(
-                        currentRow
-                );
-            }
-
-            return count;
-
-        } catch (SQLException e) {
-
-            throw new IllegalStateException(
-                    "Failed to count ResultSet rows",
-                    e
-            );
-        }
-    }
-
-    private void info(
+    private static void info(
             String message) {
 
         System.out.println(
@@ -133,7 +85,7 @@ public final class DbLogger {
         log.info(message);
     }
 
-    private void error(
+    private static void error(
             String message,
             Exception exception) {
 
@@ -149,7 +101,7 @@ public final class DbLogger {
         );
     }
 
-    private String timestamp() {
+    private static String timestamp() {
 
         return "timestamp: "
                 + LocalDateTime.now()
