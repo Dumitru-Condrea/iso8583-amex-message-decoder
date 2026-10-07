@@ -1,176 +1,158 @@
 package your.package.db.logging;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
+@Slf4j
 public final class DbLogger {
 
-    private static final Logger LOG =
-            LoggerFactory.getLogger(DbLogger.class);
+    private static final DateTimeFormatter TIMESTAMP_FORMAT =
+            DateTimeFormatter.ofPattern(
+                    "yyyy-MM-dd HH:mm:ss.SSS"
+            );
 
-    public void query(
+    public void select(
             String sql,
-            long durationMs,
-            int rows,
-            Object... params) {
+            ResultSet resultSet) {
 
-        StringBuilder builder =
-                new StringBuilder();
+        String message =
+                "========== DB SELECT ==========\n"
+                        + "Query:\n"
+                        + sql
+                        + "\n\n"
+                        + "Rows found : "
+                        + getRowCount(resultSet)
+                        + "\n"
+                        + "==============================";
 
-        builder.append("========== DB QUERY ==========\n")
-                .append("SQL:\n")
-                .append(sql)
-                .append('\n');
-
-        appendParameters(
-                builder,
-                params
-        );
-
-        builder.append("\nTime : ")
-                .append(durationMs)
-                .append(" ms\n")
-                .append("Rows : ")
-                .append(rows)
-                .append('\n')
-                .append("==============================");
-
-        write(
-                builder.toString()
-        );
+        info(message);
     }
 
     public void update(
             String sql,
-            long durationMs,
-            int affectedRows,
-            Object... params) {
+            int rowsAffected) {
 
-        StringBuilder builder =
-                new StringBuilder();
+        String message =
+                "========== DB UPDATE ==========\n"
+                        + "Query:\n"
+                        + sql
+                        + "\n\n"
+                        + "Rows affected : "
+                        + rowsAffected
+                        + "\n"
+                        + "==============================";
 
-        builder.append("========== DB UPDATE =========\n")
-                .append("SQL:\n")
-                .append(sql)
-                .append('\n');
-
-        appendParameters(
-                builder,
-                params
-        );
-
-        builder.append("\nTime          : ")
-                .append(durationMs)
-                .append(" ms\n")
-                .append("Affected rows : ")
-                .append(affectedRows)
-                .append('\n')
-                .append("==============================");
-
-        write(
-                builder.toString()
-        );
+        info(message);
     }
 
     public void error(
             String sql,
-            long durationMs,
-            Exception exception,
-            Object... params) {
+            Exception exception) {
 
-        StringBuilder builder =
-                new StringBuilder();
+        String message =
+                "=========== DB ERROR ==========\n"
+                        + "Query:\n"
+                        + sql
+                        + "\n\n"
+                        + "Error   : "
+                        + exception.getClass().getSimpleName()
+                        + "\n"
+                        + "Message : "
+                        + exception.getMessage()
+                        + "\n"
+                        + "==============================";
 
-        builder.append("========== DB ERROR ==========\n")
-                .append("SQL:\n")
-                .append(sql)
-                .append('\n');
-
-        appendParameters(
-                builder,
-                params
-        );
-
-        builder.append("\nTime    : ")
-                .append(durationMs)
-                .append(" ms\n")
-                .append("Error   : ")
-                .append(
-                        exception
-                                .getClass()
-                                .getSimpleName()
-                )
-                .append('\n')
-                .append("Message : ")
-                .append(
-                        exception.getMessage()
-                )
-                .append('\n')
-                .append("==============================");
-
-        write(
-                builder.toString()
+        error(
+                message,
+                exception
         );
     }
 
-    private void appendParameters(
-            StringBuilder builder,
-            Object... params) {
+    private int getRowCount(
+            ResultSet resultSet) {
 
-        if (params == null
-                || params.length == 0) {
-            return;
+        if (resultSet == null) {
+            return 0;
         }
 
-        builder.append("\nParameters:\n");
+        try {
 
-        for (int i = 0; i < params.length; i++) {
+            int currentRow =
+                    resultSet.getRow();
 
-            builder.append("  ")
-                    .append(i + 1)
-                    .append(" : ")
-                    .append(
-                            formatValue(
-                                    params[i]
-                            )
-                    )
-                    .append('\n');
+            boolean beforeFirst =
+                    resultSet.isBeforeFirst();
+
+            boolean afterLast =
+                    resultSet.isAfterLast();
+
+            resultSet.last();
+
+            int count =
+                    resultSet.getRow();
+
+            if (beforeFirst) {
+
+                resultSet.beforeFirst();
+
+            } else if (afterLast) {
+
+                resultSet.afterLast();
+
+            } else if (currentRow > 0) {
+
+                resultSet.absolute(
+                        currentRow
+                );
+            }
+
+            return count;
+
+        } catch (SQLException e) {
+
+            throw new IllegalStateException(
+                    "Failed to count ResultSet rows",
+                    e
+            );
         }
     }
 
-    private String formatValue(
-            Object value) {
-
-        if (value == null) {
-            return "null";
-        }
-
-        return String.valueOf(value);
-    }
-
-    private void write(
+    private void info(
             String message) {
 
-        String timestamp =
-                new SimpleDateFormat(
-                        "yyyy-MM-dd HH:mm:ss.SSS"
-                )
-                        .format(
-                                new Date()
-                        );
-
         System.out.println(
-                "timestamp: "
-                        + timestamp
-                        + "\n\n"
+                timestamp()
+                        + "\n"
                         + message
         );
 
-        LOG.info(
-                message
+        log.info(message);
+    }
+
+    private void error(
+            String message,
+            Exception exception) {
+
+        System.err.println(
+                timestamp()
+                        + "\n"
+                        + message
         );
+
+        log.error(
+                message,
+                exception
+        );
+    }
+
+    private String timestamp() {
+
+        return "timestamp: "
+                + LocalDateTime.now()
+                .format(TIMESTAMP_FORMAT);
     }
 }
