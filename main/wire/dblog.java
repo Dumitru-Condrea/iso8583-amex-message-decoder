@@ -1,5 +1,11 @@
-Object first = values != null
-        && values.length > 0
-        && values[0] != null
-        ? values[0]
-        : null;
+public static String separator(String text) {
+    int maxLength = Arrays.stream(text.split("\\R"))
+            .mapToInt(String::length)
+            .max()
+            .orElse(0);
+
+    char[] chars = new char[maxLength + 3];
+    Arrays.fill(chars, '=');
+
+    return new String(chars);
+}
