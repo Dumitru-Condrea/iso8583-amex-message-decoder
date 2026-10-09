@@ -1,11 +1,4 @@
-@ParameterType("latest transaction by date|latest transaction")
-    public TokenEventsFilter tokenEventsFilter(String value) {
-        return value.endsWith("by date")
-                ? TokenEventsFilter.LAST_TRANSACTION_DATE
-                : TokenEventsFilter.LATEST_TRANSACTION;
-    }
-
-    @ParameterType("are only|are")
-    public EventsMatchMode eventsMatchMode(String value) {
-        return value.equals("are only") ? EventsMatchMode.ONLY : EventsMatchMode.CONTAINS;
-    }
+Then i verify that the token events for the latest transaction are:
+Then i verify that the token events for the latest transaction are only:
+Then i verify that the token events for the latest transaction by date are:
+Then i verify that the token events for the latest transaction by date are only:
