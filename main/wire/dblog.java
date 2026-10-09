@@ -1,19 +1,14 @@
-public static <T, V extends Comparable<? super V>> Predicate<T> onOrAfter(
-        Function<T, V> getter,
-        V value
-) {
-    return entity -> {
-        V actual = getter.apply(entity);
-        return actual != null && actual.compareTo(value) >= 0;
-    };
-}
+Then I verify that the transaction is tokenized using Gateway and Host Message data
+Then I verify that the transaction is not tokenized using Gateway and Host Message data
 
-public static <T, V extends Comparable<? super V>> Predicate<T> onOrBefore(
-        Function<T, V> getter,
-        V value
-) {
-    return entity -> {
-        V actual = getter.apply(entity);
-        return actual != null && actual.compareTo(value) <= 0;
-    };
-}
+        
+Then I validate token usage through Gateway and Host Message
+Then I validate the absence of token usage through Gateway and Host Message        
+
+        
+Then I verify that token usage is expected for the transaction
+Then I verify that token usage is not expected for the transaction
+
+        
+Then I verify that the transaction uses a token
+Then I verify that the transaction does not use a token
