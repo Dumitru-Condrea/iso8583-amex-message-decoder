@@ -1,0 +1,19 @@
+stage('Run Tests') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'BITBUCKET',
+            passwordVariable: 'GIT_PASSWORD',
+            usernameVariable: 'GIT_USERNAME'
+        )]) {
+            sh "git config user.email 'jenkins@the-logic-group.com'"
+            sh "git config user.name '${GIT_USERNAME}'"
+
+            catchError(
+                buildResult: 'UNSTABLE',
+                stageResult: 'UNSTABLE'
+            ) {
+                sh "mvn test -B -DdriverType=chrome-linux -Dcucumber.filter.tags='${functionalityTag}'"
+            }
+        }
+    }
+}
