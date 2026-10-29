@@ -1,25 +1,18 @@
+final int maxAttempts = 3;
 
-@And("I have made a delete token request for {wsTokenType}")
-public void iHaveMadeATokenWebServiceDeleteRequest(
-        TokenWebServiceHelper.TokenType type) {
+for (int attempt = 1; ; attempt++) {
+    try {
+        TokenWebServiceUtil.deleteTokens(testData, type);
+        return;
 
-    final int maxAttempts = 3;
+    } catch (Exception exception) {
+        log.error("Token deletion failed. Attempt {}/{}",
+                attempt, maxAttempts, exception);
 
-    for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            TokenWebServiceUtil.deleteTokens(testData, type);
-            return;
-
-        } catch (Exception exception) {
-            log.error("Token deletion failed. Attempt {}/{}",
-                    attempt, maxAttempts, exception);
-
-            if (attempt == maxAttempts) {
-                throw new TestException(
-                        exception.getMessage(), exception);
-            }
-
-            GeneralUtilities.waitFor(20L * attempt);
+        if (attempt >= maxAttempts) {
+            throw new TestException(exception.getMessage(), exception);
         }
+
+        GeneralUtilities.waitFor(20L * attempt);
     }
 }
