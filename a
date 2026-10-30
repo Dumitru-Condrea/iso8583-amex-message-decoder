@@ -1,21 +1,31 @@
-private static String normalizePropertyName(String name) {
+public static void checkTokenResponseErrorStatus(
+        boolean shouldContainErrors,
+        String expectedError
+) {
+    List<TokenError> errors = lastTokenResponse.getErrors();
 
-    String[] words = name.trim().split("\\s+");
+    if (!shouldContainErrors) {
+        assertThat(errors)
+                .as("No token errors were expected. Response: %s",
+                        printUsefulTokenDetails(lastTokenResponse))
+                .isEmpty();
 
-    StringBuilder result =
-            new StringBuilder(words[0]);
-
-    for (int i = 1; i < words.length; i++) {
-
-        String word = words[i];
-
-        result.append(
-                Character.toUpperCase(word.charAt(0))
-        ).append(word.substring(1));
+        log.info("No token errors reported, as expected.");
+        return;
     }
 
-    String normalized = result.toString();
+    assertThat(errors)
+            .as("Token response was expected to contain errors. Response: %s",
+                    printUsefulTokenDetails(lastTokenResponse))
+            .isNotEmpty();
 
-    return Character.toLowerCase(normalized.charAt(0))
-            + normalized.substring(1);
+    if (expectedError != null && !expectedError.isEmpty()) {
+        assertThat(errors)
+                .extracting(TokenError::getMessage)
+                .as("Expected token error: %s", expectedError)
+                .contains(expectedError);
+    }
+
+    log.info("Token errors validated successfully: {}",
+            printUsefulTokenDetails(lastTokenResponse));
 }
