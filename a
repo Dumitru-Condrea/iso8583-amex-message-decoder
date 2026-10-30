@@ -1,8 +1,119 @@
-private static boolean isBlank(String value) {
-    return value == null || value.trim().isEmpty();
+private static Optional<String> validateXmlValue(
+        String expression,
+        String condition,
+        String expected,
+        String actual
+) {
+    String message = String.format(
+            "XPath: %s | Condition: %s | Expected: %s | Actual: %s",
+            expression, condition, expected, actual
+    );
+
+    boolean valid;
+
+    switch (condition) {
+        case "equals":
+            valid = Objects.equals(actual, expected);
+            break;
+
+        case "equalsignorecase":
+            valid = actual != null && actual.equalsIgnoreCase(expected);
+            break;
+
+        case "contains":
+            valid = actual != null && actual.contains(expected);
+            break;
+
+        case "startswith":
+            valid = actual != null && actual.startsWith(expected);
+            break;
+
+        case "endswith":
+            valid = actual != null && actual.endsWith(expected);
+            break;
+
+        case "match":
+        case "matches":
+            valid = actual != null && actual.matches(expected);
+            break;
+
+        case "empty":
+            valid = actual != null && actual.trim().isEmpty();
+            break;
+
+        case "notempty":
+            valid = actual != null && !actual.trim().isEmpty();
+            break;
+
+        default:
+            return Optional.of(
+                    "Unsupported condition '" + condition + "' | " + message
+            );
+    }
+
+    return valid
+            ? Optional.empty()
+            : Optional.of("XML validation failed | " + message);
 }
 
-private static boolean requiresExpected(String condition) {
-    return !"empty".equals(condition)
-            && !"notempty".equals(condition);
+
+
+@Then("^the token response body matches following xml elements$")
+public void theTokenResponseBodyMatchesFollowingXmlElements(
+        List<Map<String, String>> xmlElements
+) throws Exception {
+
+    String responseXml = marshal(
+            WsTokenResponse.class,
+            TokenWebServiceUtil.getLastTokenResponse(),
+            "return"
+    );
+
+    Document document = getDocumentFromXml(responseXml);
+    XPath xpath = getXPath();
+
+    List<String> failures = new ArrayList<>();
+
+    for (Map<String, String> row : xmlElements) {
+        String expression = row.get("xpathExpression");
+        String condition = row.get("condition");
+        String expected = row.get("expected");
+
+        if (isBlank(expression) || isBlank(condition)) {
+            failures.add("Missing XPath or condition in row: " + row);
+            continue;
+        }
+
+        condition = condition.trim().toLowerCase(Locale.ROOT);
+
+        if (requiresExpected(condition) && isBlank(expected)) {
+            failures.add(String.format(
+                    "Missing expected value for condition '%s', XPath: %s",
+                    condition, expression
+            ));
+            continue;
+        }
+
+        String actual;
+
+        try {
+            actual = evaluate(document, xpath, expression);
+        } catch (XPathExpressionException e) {
+            failures.add(String.format(
+                    "Failed to evaluate XPath '%s': %s",
+                    expression, e.getMessage()
+            ));
+            continue;
+        }
+
+        validateXmlValue(expression, condition, expected, actual)
+                .ifPresent(failures::add);
+    }
+
+    if (!failures.isEmpty()) {
+        Assert.fail(
+                "XML validation failed:\n" +
+                String.join("\n", failures)
+        );
+    }
 }
