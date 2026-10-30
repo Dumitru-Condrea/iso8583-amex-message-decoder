@@ -1,31 +1,125 @@
-public static void checkTokenResponseErrorStatus(
-        boolean shouldContainErrors,
-        String expectedError
+@Then("^the token response body matches following xml elements$")
+public void theTokenResponseBodyMatchesFollowingXmlElements(
+        List<Map<String, String>> xmlElements
+) throws Exception {
+
+    String responseXml = marshal(
+            WsTokenResponse.class,
+            TokenWebServiceUtil.getLastTokenResponse(),
+            "return"
+    );
+
+    Document document = getDocumentFromXml(responseXml);
+    XPath xpath = getXPath();
+
+    SoftAssertions softly = new SoftAssertions();
+
+    for (Map<String, String> row : xmlElements) {
+        String expression = row.get("xpathExpression");
+        String condition = row.get("condition");
+        String expected = row.get("expected");
+
+        if (isBlank(expression) || isBlank(condition)) {
+            softly.fail("Missing XPath or condition in row: %s", row);
+            continue;
+        }
+
+        condition = condition.trim().toLowerCase(Locale.ROOT);
+
+        if (requiresExpected(condition) && isBlank(expected)) {
+            softly.fail(
+                    "Missing expected value for condition '%s', XPath: %s",
+                    condition, expression
+            );
+            continue;
+        }
+
+        String actual;
+
+        try {
+            actual = evaluate(document, xpath, expression);
+        } catch (Exception e) {
+            softly.fail(
+                    "Failed to evaluate XPath '%s': %s",
+                    expression, e.getMessage()
+            );
+            continue;
+        }
+
+        validateXmlValue(
+                softly, expression, condition, expected, actual
+        );
+    }
+
+    softly.assertAll();
+}
+
+
+private static void validateXmlValue(
+        SoftAssertions softly,
+        String expression,
+        String condition,
+        String expected,
+        String actual
 ) {
-    List<TokenError> errors = lastTokenResponse.getErrors();
+    String description = String.format(
+            "XPath: %s | Condition: %s",
+            expression, condition
+    );
 
-    if (!shouldContainErrors) {
-        assertThat(errors)
-                .as("No token errors were expected. Response: %s",
-                        printUsefulTokenDetails(lastTokenResponse))
-                .isEmpty();
+    switch (condition) {
+        case "equals":
+            softly.assertThat(actual)
+                    .as(description)
+                    .isEqualTo(expected);
+            break;
 
-        log.info("No token errors reported, as expected.");
-        return;
+        case "equalsignorecase":
+            softly.assertThat(actual)
+                    .as(description)
+                    .isEqualToIgnoringCase(expected);
+            break;
+
+        case "contains":
+            softly.assertThat(actual)
+                    .as(description)
+                    .contains(expected);
+            break;
+
+        case "startswith":
+            softly.assertThat(actual)
+                    .as(description)
+                    .startsWith(expected);
+            break;
+
+        case "endswith":
+            softly.assertThat(actual)
+                    .as(description)
+                    .endsWith(expected);
+            break;
+
+        case "matches":
+            softly.assertThat(actual)
+                    .as(description)
+                    .matches(expected);
+            break;
+
+        case "empty":
+            softly.assertThat(actual)
+                    .as(description)
+                    .isBlank();
+            break;
+
+        case "notempty":
+            softly.assertThat(actual)
+                    .as(description)
+                    .isNotBlank();
+            break;
+
+        default:
+            softly.fail(
+                    "Unsupported condition '%s' for XPath: %s",
+                    condition, expression
+            );
     }
-
-    assertThat(errors)
-            .as("Token response was expected to contain errors. Response: %s",
-                    printUsefulTokenDetails(lastTokenResponse))
-            .isNotEmpty();
-
-    if (expectedError != null && !expectedError.isEmpty()) {
-        assertThat(errors)
-                .extracting(TokenError::getMessage)
-                .as("Expected token error: %s", expectedError)
-                .contains(expectedError);
-    }
-
-    log.info("Token errors validated successfully: {}",
-            printUsefulTokenDetails(lastTokenResponse));
 }
