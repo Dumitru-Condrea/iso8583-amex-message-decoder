@@ -1,11 +1,7 @@
-
-package your.package.tgs;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 public final class TgsConfigurationManager {
 
@@ -13,7 +9,6 @@ public final class TgsConfigurationManager {
             "tgs.config.wait-seconds";
 
     private final MongoConfigurationService mongoService;
-
     private final long waitSeconds;
 
     public TgsConfigurationManager(
@@ -35,12 +30,12 @@ public final class TgsConfigurationManager {
         }
     }
 
-    public TgsUpdateResult updateIfRequired(
+    public void updateConfiguration(
             String tokenOwnerId,
             CardBrand brand,
             TgsConfigurationScope scope,
             JsonNode request,
-            Supplier<ApiResponse> updateAction) {
+            Runnable updateAction) {
 
         Objects.requireNonNull(tokenOwnerId, "tokenOwnerId");
         Objects.requireNonNull(brand, "brand");
@@ -48,60 +43,62 @@ public final class TgsConfigurationManager {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(updateAction, "updateAction");
 
-        // Read current configuration.
-        JsonNode current = mongoService.getEmvConfiguration(
+        // Compare request with current MongoDB configuration.
+        boolean alreadyMatches = matchesConfiguration(
                 tokenOwnerId,
-                brand
+                brand,
+                scope,
+                request
         );
 
-        // Skip unnecessary TGS updates.
-        if (TgsConfigurationComparator.matches(
-                current,
-                request,
-                scope)) {
+        // Always execute TGS POST.
+        updateAction.run();
 
-            return TgsUpdateResult.SKIPPED;
-        }
-
-        // Execute existing Gateway/TGS request.
-        ApiResponse response = updateAction.get();
-
-        if (response == null || !response.isSuccessful()) {
-
-            throw new IllegalStateException(
-                    "TGS configuration update failed"
-                            + (response == null
-                            ? ": response is null"
-                            : ". HTTP status: "
-                            + response.getStatusCode())
-            );
+        // Skip waiting if configuration already matched.
+        if (alreadyMatches) {
+            return;
         }
 
         // Wait for configuration propagation.
         waitForConfiguration();
 
-        // Read actual configuration after update.
-        JsonNode updated = mongoService.getEmvConfiguration(
+        // Compare the same request with MongoDB again.
+        if (!matchesConfiguration(
                 tokenOwnerId,
-                brand
-        );
-
-        // Validate persisted configuration.
-        if (!TgsConfigurationComparator.matches(
-                updated,
-                request,
-                scope)) {
-
+                brand,
+                scope,
+                request
+        )) {
             throw new IllegalStateException(
-                    "TGS configuration was not applied "
-                            + "after " + waitSeconds + " seconds. "
-                            + "Token owner: " + tokenOwnerId
-                            + ", brand: " + brand
-                            + ", scope: " + scope
+                    "TGS configuration was not applied after "
+                            + waitSeconds
+                            + " seconds. Token owner: "
+                            + tokenOwnerId
+                            + ", brand: "
+                            + brand
+                            + ", scope: "
+                            + scope
             );
         }
+    }
 
-        return TgsUpdateResult.UPDATED;
+    private boolean matchesConfiguration(
+            String tokenOwnerId,
+            CardBrand brand,
+            TgsConfigurationScope scope,
+            JsonNode request) {
+
+        JsonNode mongoConfig =
+                mongoService.getEmvConfiguration(
+                        tokenOwnerId,
+                        brand
+                );
+
+        return TgsConfigurationComparator.matches(
+                mongoConfig,
+                request,
+                scope
+        );
     }
 
     private void waitForConfiguration() {
@@ -114,12 +111,10 @@ public final class TgsConfigurationManager {
             TimeUnit.SECONDS.sleep(waitSeconds);
 
         } catch (InterruptedException e) {
-
             Thread.currentThread().interrupt();
 
             throw new IllegalStateException(
-                    "Interrupted while waiting for "
-                            + "TGS configuration update",
+                    "Interrupted while waiting for TGS configuration",
                     e
             );
         }
