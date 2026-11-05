@@ -13,3 +13,35 @@ public Document findDocument(String tokenOwnerId) {
 
     return document;
 }
+
+
+public JsonNode findEmvConfig(
+        String tokenOwnerId,
+        CardBrand brand) {
+
+    Document document = findDocument(tokenOwnerId);
+
+    Document emvConfig =
+            document.get("emvConfig", Document.class);
+
+    if (emvConfig == null) {
+        throw new IllegalStateException(
+                "emvConfig not found for tokenOwnerId: "
+                        + tokenOwnerId
+        );
+    }
+
+    Document brandConfig =
+            emvConfig.get(brand.name(), Document.class);
+
+    if (brandConfig == null) {
+        throw new IllegalStateException(
+                "EMV configuration not found for brand "
+                        + brand
+                        + " and tokenOwnerId "
+                        + tokenOwnerId
+        );
+    }
+
+    return JsonUtils.read(brandConfig.toJson());
+}
