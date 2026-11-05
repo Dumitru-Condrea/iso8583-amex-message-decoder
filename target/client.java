@@ -1,47 +1,47 @@
-public Document findDocument(String tokenOwnerId) {
+package your.package.db.mongo;
 
-    Document document = collection
-            .find(Filters.eq("tokenOwnerId", tokenOwnerId))
-            .first();
+import com.fasterxml.jackson.databind.JsonNode;
+import org.bson.Document;
 
-    if (document == null) {
-        throw new IllegalStateException(
-                "MongoDB document not found for tokenOwnerId: "
-                        + tokenOwnerId
-        );
+public final class MongoConfigurationService {
+
+    private final MongoDbClient mongoDbClient;
+
+    public MongoConfigurationService(
+            MongoDbClient mongoDbClient) {
+
+        this.mongoDbClient = mongoDbClient;
     }
 
-    return document;
-}
+    public JsonNode getEmvConfiguration(
+            String tokenOwnerId,
+            CardBrand brand) {
 
+        Document document =
+                mongoDbClient.findByTokenOwnerId(tokenOwnerId);
 
-public JsonNode findEmvConfig(
-        String tokenOwnerId,
-        CardBrand brand) {
+        Document emvConfig =
+                document.get("emvConfig", Document.class);
 
-    Document document = findDocument(tokenOwnerId);
+        if (emvConfig == null) {
+            throw new IllegalStateException(
+                    "MongoDB emvConfig not found for tokenOwnerId: "
+                            + tokenOwnerId
+            );
+        }
 
-    Document emvConfig =
-            document.get("emvConfig", Document.class);
+        Document brandConfig =
+                emvConfig.get(brand.name(), Document.class);
 
-    if (emvConfig == null) {
-        throw new IllegalStateException(
-                "emvConfig not found for tokenOwnerId: "
-                        + tokenOwnerId
-        );
+        if (brandConfig == null) {
+            throw new IllegalStateException(
+                    "MongoDB EMV configuration not found for brand "
+                            + brand
+                            + " and tokenOwnerId "
+                            + tokenOwnerId
+            );
+        }
+
+        return JsonUtils.read(brandConfig.toJson());
     }
-
-    Document brandConfig =
-            emvConfig.get(brand.name(), Document.class);
-
-    if (brandConfig == null) {
-        throw new IllegalStateException(
-                "EMV configuration not found for brand "
-                        + brand
-                        + " and tokenOwnerId "
-                        + tokenOwnerId
-        );
-    }
-
-    return JsonUtils.read(brandConfig.toJson());
 }
