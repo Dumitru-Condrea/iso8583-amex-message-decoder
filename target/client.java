@@ -1,3 +1,4 @@
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Objects;
@@ -30,7 +31,7 @@ public final class TgsConfigurationManager {
         }
     }
 
-    public void updateConfiguration(
+    public boolean updateIfRequired(
             String tokenOwnerId,
             CardBrand brand,
             TgsConfigurationScope scope,
@@ -43,26 +44,23 @@ public final class TgsConfigurationManager {
         Objects.requireNonNull(request, "request");
         Objects.requireNonNull(updateAction, "updateAction");
 
-        // Compare request with current MongoDB configuration.
-        boolean alreadyMatches = matchesConfiguration(
+        // Check the current MongoDB configuration.
+        if (matchesConfiguration(
                 tokenOwnerId,
                 brand,
                 scope,
                 request
-        );
-
-        // Always execute TGS POST.
-        updateAction.run();
-
-        // Skip waiting if configuration already matched.
-        if (alreadyMatches) {
-            return;
+        )) {
+            return false;
         }
+
+        // Send TGS POST only when configuration differs.
+        updateAction.run();
 
         // Wait for configuration propagation.
         waitForConfiguration();
 
-        // Compare the same request with MongoDB again.
+        // Verify that MongoDB reflects the requested changes.
         if (!matchesConfiguration(
                 tokenOwnerId,
                 brand,
@@ -80,6 +78,8 @@ public final class TgsConfigurationManager {
                             + scope
             );
         }
+
+        return true;
     }
 
     private boolean matchesConfiguration(
@@ -120,3 +120,4 @@ public final class TgsConfigurationManager {
         }
     }
 }
+
