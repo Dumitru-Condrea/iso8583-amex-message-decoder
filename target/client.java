@@ -1,134 +1,127 @@
 
-public enum TgsConfigurationScope {
-
-    SETTINGS("settings", "emvSettings"),
-
-    WALLETS("wallets", "digitalWalletsSettings"),
-
-    FULL(null, null);
-
-    private final String mongoField;
-    private final String requestField;
-
-    TgsConfigurationScope(
-            String mongoField,
-            String requestField) {
-
-        this.mongoField = mongoField;
-        this.requestField = requestField;
-    }
-
-    public String getMongoField() {
-        return mongoField;
-    }
-
-    public String getRequestField() {
-        return requestField;
-    }
-}
-
-
-
-
-
-
-
+package your.package.tgs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
-public final class TgsConfigurationComparator {
+public final class TgsConfigurationManager {
 
-    private TgsConfigurationComparator() {
+    private static final String WAIT_SECONDS_KEY =
+            "tgs.config.wait-seconds";
+
+    private final MongoConfigurationService mongoService;
+
+    private final long waitSeconds;
+
+    public TgsConfigurationManager(
+            MongoConfigurationService mongoService) {
+
+        this.mongoService = Objects.requireNonNull(
+                mongoService,
+                "MongoConfigurationService must not be null"
+        );
+
+        this.waitSeconds = Long.parseLong(
+                Config.get(WAIT_SECONDS_KEY)
+        );
+
+        if (waitSeconds < 0) {
+            throw new IllegalArgumentException(
+                    "TGS configuration wait cannot be negative"
+            );
+        }
     }
 
-    public static boolean matches(
-            JsonNode mongoConfig,
-            JsonNode tgsRequest,
-            TgsConfigurationScope scope) {
+    public TgsUpdateResult updateIfRequired(
+            String tokenOwnerId,
+            CardBrand brand,
+            TgsConfigurationScope scope,
+            JsonNode request,
+            Supplier<ApiResponse> updateAction) {
 
-        Objects.requireNonNull(mongoConfig, "Mongo config must not be null");
-        Objects.requireNonNull(tgsRequest, "TGS request must not be null");
-        Objects.requireNonNull(scope, "Configuration scope must not be null");
+        Objects.requireNonNull(tokenOwnerId, "tokenOwnerId");
+        Objects.requireNonNull(brand, "brand");
+        Objects.requireNonNull(scope, "scope");
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(updateAction, "updateAction");
 
-        if (scope == TgsConfigurationScope.FULL) {
-            return matchesSection(
-                    mongoConfig,
-                    tgsRequest,
-                    TgsConfigurationScope.SETTINGS
-            ) && matchesSection(
-                    mongoConfig,
-                    tgsRequest,
-                    TgsConfigurationScope.WALLETS
+        // Read current configuration.
+        JsonNode current = mongoService.getEmvConfiguration(
+                tokenOwnerId,
+                brand
+        );
+
+        // Skip unnecessary TGS updates.
+        if (TgsConfigurationComparator.matches(
+                current,
+                request,
+                scope)) {
+
+            return TgsUpdateResult.SKIPPED;
+        }
+
+        // Execute existing Gateway/TGS request.
+        ApiResponse response = updateAction.get();
+
+        if (response == null || !response.isSuccessful()) {
+
+            throw new IllegalStateException(
+                    "TGS configuration update failed"
+                            + (response == null
+                            ? ": response is null"
+                            : ". HTTP status: "
+                            + response.getStatusCode())
             );
         }
 
-        return matchesSection(
-                mongoConfig,
-                tgsRequest,
-                scope
+        // Wait for configuration propagation.
+        waitForConfiguration();
+
+        // Read actual configuration after update.
+        JsonNode updated = mongoService.getEmvConfiguration(
+                tokenOwnerId,
+                brand
         );
+
+        // Validate persisted configuration.
+        if (!TgsConfigurationComparator.matches(
+                updated,
+                request,
+                scope)) {
+
+            throw new IllegalStateException(
+                    "TGS configuration was not applied "
+                            + "after " + waitSeconds + " seconds. "
+                            + "Token owner: " + tokenOwnerId
+                            + ", brand: " + brand
+                            + ", scope: " + scope
+            );
+        }
+
+        return TgsUpdateResult.UPDATED;
     }
 
-    private static boolean matchesSection(
-            JsonNode mongoConfig,
-            JsonNode tgsRequest,
-            TgsConfigurationScope scope) {
+    private void waitForConfiguration() {
 
-        JsonNode actual =
-                mongoConfig.path(scope.getMongoField());
-
-        JsonNode expected =
-                tgsRequest.path(scope.getRequestField());
-
-        if (!actual.isObject() || !expected.isObject()
-                || expected.size() == 0) {
-            return false;
+        if (waitSeconds == 0) {
+            return;
         }
 
-        return containsExpected(actual, expected);
-    }
+        try {
+            TimeUnit.SECONDS.sleep(waitSeconds);
 
-    private static boolean containsExpected(
-            JsonNode actual,
-            JsonNode expected) {
+        } catch (InterruptedException e) {
 
-        if (expected.isObject()) {
+            Thread.currentThread().interrupt();
 
-            if (!actual.isObject()) {
-                return false;
-            }
-
-            Iterator<Map.Entry<String, JsonNode>> fields =
-                    expected.fields();
-
-            while (fields.hasNext()) {
-
-                Map.Entry<String, JsonNode> field =
-                        fields.next();
-
-                JsonNode actualValue =
-                        actual.path(field.getKey());
-
-                if (actualValue.isMissingNode()
-                        || !containsExpected(
-                                actualValue,
-                                field.getValue()
-                        )) {
-                    return false;
-                }
-            }
-
-            return true;
+            throw new IllegalStateException(
+                    "Interrupted while waiting for "
+                            + "TGS configuration update",
+                    e
+            );
         }
-
-        if (expected.isArray()) {
-            return actual.equals(expected);
-        }
-
-        return actual.equals(expected);
     }
 }
