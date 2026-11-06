@@ -2,60 +2,71 @@
 package your.package.tgs;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TgsConfigurationComparator {
 
-    private TgsConfigurationComparator() {
-    }
+    public static List<String> compare(
+            @NonNull JsonNode mongoConfig,
+            @NonNull JsonNode tgsRequest,
+            @NonNull TgsConfigurationScope scope) {
 
-    public static boolean matches(
-            JsonNode mongoConfig,
-            JsonNode tgsRequest,
-            TgsConfigurationScope scope) {
-
-        Objects.requireNonNull(
-                mongoConfig,
-                "Mongo configuration must not be null"
-        );
-
-        Objects.requireNonNull(
-                tgsRequest,
-                "TGS request must not be null"
-        );
-
-        Objects.requireNonNull(
-                scope,
-                "Configuration scope must not be null"
-        );
+        List<String> differences = new ArrayList<>();
 
         if (scope == TgsConfigurationScope.FULL) {
 
-            return matchesSection(
+            compareSection(
                     mongoConfig,
                     tgsRequest,
-                    TgsConfigurationScope.SETTINGS
-            ) && matchesSection(
+                    TgsConfigurationScope.SETTINGS,
+                    differences
+            );
+
+            compareSection(
                     mongoConfig,
                     tgsRequest,
-                    TgsConfigurationScope.WALLETS
+                    TgsConfigurationScope.WALLETS,
+                    differences
+            );
+
+        } else {
+
+            compareSection(
+                    mongoConfig,
+                    tgsRequest,
+                    scope,
+                    differences
             );
         }
 
-        return matchesSection(
+        return differences;
+    }
+
+    public static boolean matches(
+            @NonNull JsonNode mongoConfig,
+            @NonNull JsonNode tgsRequest,
+            @NonNull TgsConfigurationScope scope) {
+
+        return compare(
                 mongoConfig,
                 tgsRequest,
                 scope
-        );
+        ).isEmpty();
     }
 
-    private static boolean matchesSection(
+    private static void compareSection(
             JsonNode mongoConfig,
             JsonNode tgsRequest,
-            TgsConfigurationScope scope) {
+            TgsConfigurationScope scope,
+            List<String> differences) {
 
         JsonNode actual =
                 mongoConfig.path(scope.getMongoField());
@@ -63,28 +74,46 @@ public final class TgsConfigurationComparator {
         JsonNode expected =
                 tgsRequest.path(scope.getRequestField());
 
-        // A missing, invalid or empty expected
-        // section must never pass validation.
-        if (!expected.isObject()
-                || expected.size() == 0) {
-            return false;
+        String path = scope.getMongoField();
+
+        if (!expected.isObject() || expected.size() == 0) {
+
+            differences.add(
+                    path + "\n"
+                            + "   Expected : non-empty JSON object"
+                            + "\n"
+                            + "   Actual   : missing or empty request section"
+            );
+
+            return;
         }
 
-        return containsExpected(actual, expected);
+        compareNodes(
+                actual,
+                expected,
+                path,
+                differences
+        );
     }
 
-    private static boolean containsExpected(
+    private static void compareNodes(
             JsonNode actual,
-            JsonNode expected) {
-
-        if (actual.isMissingNode()) {
-            return false;
-        }
+            JsonNode expected,
+            String path,
+            List<String> differences) {
 
         if (expected.isObject()) {
 
             if (!actual.isObject()) {
-                return false;
+
+                addDifference(
+                        differences,
+                        path,
+                        expected,
+                        actual
+                );
+
+                return;
             }
 
             Iterator<Map.Entry<String, JsonNode>> fields =
@@ -95,24 +124,54 @@ public final class TgsConfigurationComparator {
                 Map.Entry<String, JsonNode> field =
                         fields.next();
 
-                JsonNode actualValue =
-                        actual.path(field.getKey());
-
-                if (!containsExpected(
-                        actualValue,
-                        field.getValue()
-                )) {
-                    return false;
-                }
+                compareNodes(
+                        actual.path(field.getKey()),
+                        field.getValue(),
+                        path + "." + field.getKey(),
+                        differences
+                );
             }
 
-            return true;
+            return;
         }
 
-        // Arrays and scalar values are compared exactly.
-        return actual.equals(expected);
+        if (actual.isMissingNode()
+                || !actual.equals(expected)) {
+
+            addDifference(
+                    differences,
+                    path,
+                    expected,
+                    actual
+            );
+        }
+    }
+
+    private static void addDifference(
+            List<String> differences,
+            String path,
+            JsonNode expected,
+            JsonNode actual) {
+
+        differences.add(
+                path
+                        + "\n   Expected : "
+                        + format(expected)
+                        + "\n   Actual   : "
+                        + format(actual)
+        );
+    }
+
+    private static String format(JsonNode node) {
+
+        if (node == null || node.isMissingNode()) {
+            return "<missing>";
+        }
+
+        return node.toString();
     }
 }
+
 
 
 
@@ -120,36 +179,37 @@ public final class TgsConfigurationComparator {
 package your.package.tgs;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
-import java.util.Objects;
+import java.util.List;
+import java.util.stream.Collectors;
 
-// Import your existing classes:
-// MongoConfigurationService
-// CardBrand
-
+@RequiredArgsConstructor
 public final class TgsConfigurationValidator {
 
+    @NonNull
     private final MongoConfigurationService mongoService;
 
-    public TgsConfigurationValidator(
-            MongoConfigurationService mongoService) {
+    public boolean matches(
+            @NonNull String tokenOwnerId,
+            @NonNull CardBrand brand,
+            @NonNull TgsConfigurationScope scope,
+            @NonNull JsonNode expectedRequest) {
 
-        this.mongoService = Objects.requireNonNull(
-                mongoService,
-                "MongoConfigurationService must not be null"
-        );
+        return compare(
+                tokenOwnerId,
+                brand,
+                scope,
+                expectedRequest
+        ).isEmpty();
     }
 
-    public boolean matches(
-            String tokenOwnerId,
-            CardBrand brand,
-            TgsConfigurationScope scope,
-            JsonNode expectedRequest) {
-
-        Objects.requireNonNull(tokenOwnerId, "tokenOwnerId");
-        Objects.requireNonNull(brand, "brand");
-        Objects.requireNonNull(scope, "scope");
-        Objects.requireNonNull(expectedRequest, "expectedRequest");
+    public List<String> compare(
+            @NonNull String tokenOwnerId,
+            @NonNull CardBrand brand,
+            @NonNull TgsConfigurationScope scope,
+            @NonNull JsonNode expectedRequest) {
 
         JsonNode actualConfig =
                 mongoService.getEmvConfiguration(
@@ -157,7 +217,7 @@ public final class TgsConfigurationValidator {
                         brand
                 );
 
-        return TgsConfigurationComparator.matches(
+        return TgsConfigurationComparator.compare(
                 actualConfig,
                 expectedRequest,
                 scope
@@ -165,24 +225,34 @@ public final class TgsConfigurationValidator {
     }
 
     public void verify(
-            String tokenOwnerId,
-            CardBrand brand,
-            TgsConfigurationScope scope,
-            JsonNode expectedRequest) {
+            @NonNull String tokenOwnerId,
+            @NonNull CardBrand brand,
+            @NonNull TgsConfigurationScope scope,
+            @NonNull JsonNode expectedRequest) {
 
-        if (!matches(
+        List<String> differences = compare(
                 tokenOwnerId,
                 brand,
                 scope,
                 expectedRequest
-        )) {
+        );
 
-            throw new AssertionError(
-                    "TGS configuration does not match the expected state."
-                            + "\nToken owner: " + tokenOwnerId
-                            + "\nBrand: " + brand
-                            + "\nScope: " + scope
-            );
+        if (differences.isEmpty()) {
+            return;
         }
+
+        String details = differences.stream()
+                .map(diff -> " - " + diff)
+                .collect(Collectors.joining("\n\n"));
+
+        throw new AssertionError(
+                "TGS configuration validation failed"
+                        + "\nToken owner : " + tokenOwnerId
+                        + "\nBrand       : " + brand
+                        + "\nScope       : " + scope
+                        + "\n\nMismatched fields ("
+                        + differences.size() + "):"
+                        + "\n\n" + details
+        );
     }
 }
