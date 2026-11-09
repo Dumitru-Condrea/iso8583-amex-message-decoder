@@ -1,35 +1,52 @@
-public static boolean containsEnabledToggle(
-        @NonNull JsonNode request,
+private static @NonNull ApiResponse updateAndVerify(
+        @NonNull String brand,
+        @NonNull String tokenOwnerId,
+        @NonNull ObjectNode request,
         @NonNull TgsConfigurationScope scope) {
 
-    if (scope == TgsConfigurationScope.FULL) {
-        return containsEnabledToggle(
-                request,
-                TgsConfigurationScope.SETTINGS
-        ) || containsEnabledToggle(
-                request,
-                TgsConfigurationScope.WALLETS
-        );
+    // Read MongoDB and compare current configuration.
+    boolean configurationMatches =
+            TgsConfigurationValidator.matches(
+                    tokenOwnerId,
+                    brand,
+                    scope,
+                    request
+            );
+
+    // Determine whether waiting is necessary.
+    boolean requiresWait =
+            !configurationMatches
+                    && TgsConfigurationComparator.containsEnabledToggle(
+                            request,
+                            scope
+                    );
+
+    // Existing cache operations.
+    assertThat(GATEWAY_ACTUATOR().deleteCaches()
+            .isSuccessful()).isTrue();
+
+    assertThat(GATEWAY_ACTUATOR().getCaches()
+            .isSuccessful()).isTrue();
+
+    // Always execute TGS request.
+    ApiResponse response = GATEWAY()
+            .changeTokenOwnerState(tokenOwnerId, request);
+
+    assertThat(response.isSuccessful())
+            .isTrue();
+
+    // Wait only when configuration differs and true is requested.
+    if (requiresWait) {
+        waitForConfiguration();
     }
 
-    return containsTrue(
-            request.path(scope.getRequestField())
+    // Always verify actual MongoDB configuration.
+    TgsConfigurationValidator.verify(
+            tokenOwnerId,
+            brand,
+            scope,
+            request
     );
-}
 
-private static boolean containsTrue(JsonNode node) {
-
-    if (node.isBoolean()) {
-        return node.booleanValue();
-    }
-
-    if (node.isContainerNode()) {
-        for (JsonNode child : node) {
-            if (containsTrue(child)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return response;
 }
