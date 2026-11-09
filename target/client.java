@@ -1,7 +1,19 @@
-public static boolean requiresActivationWait(
+TGS configuration activation detected. Waiting 60 seconds for changes to take effect before validation.
+
+        public static boolean requiresActivationWait(
         @NonNull JsonNode mongoConfig,
         @NonNull JsonNode request,
         @NonNull TgsConfigurationScope scope) {
+
+    JsonNode tokenisationEnabled = request
+            .path("emvSettings")
+            .path("emvTokenisationEnabled");
+
+    // Explicitly disabling tokenisation overrides all other toggles.
+    if (tokenisationEnabled.isBoolean()
+            && !tokenisationEnabled.booleanValue()) {
+        return false;
+    }
 
     switch (scope) {
 
@@ -17,112 +29,7 @@ public static boolean requiresActivationWait(
 
         default:
             throw new IllegalArgumentException(
-                    "Unsupported TGS configuration scope: " + scope
+                    "Unsupported configuration scope: " + scope
             );
     }
 }
-
-
-
-
-private static boolean requiresSettingsWait(
-        JsonNode mongoConfig,
-        JsonNode request) {
-
-    JsonNode actual = mongoConfig.path("settings");
-    JsonNode expected = request.path("emvSettings");
-
-    // Main switch explicitly disabled:
-    // no activation wait, regardless of dependent toggles.
-    if (expected.has("emvTokenisationEnabled")
-            && !expected.path("emvTokenisationEnabled").asBoolean()) {
-        return false;
-    }
-
-    return isEnabling(
-            actual,
-            expected,
-            "emvTokenisationEnabled"
-    ) || isEnabling(
-            actual,
-            expected,
-            "exposeTokenToMerchant"
-    );
-}
-
-
-
-private static boolean requiresWalletsWait(
-        JsonNode mongoConfig,
-        JsonNode request) {
-
-    JsonNode actual = mongoConfig.path("wallets");
-    JsonNode expected = request.path("digitalWalletsSettings");
-
-    return isEnabling(
-            actual,
-            expected,
-            "googlePayEnabled"
-    ) || isEnabling(
-            actual,
-            expected,
-            "applePayEnabled"
-    );
-}
-
-
-private static boolean isEnabling(
-        JsonNode actual,
-        JsonNode expected,
-        String field) {
-
-    JsonNode requested = expected.path(field);
-
-    if (!requested.isBoolean() || !requested.booleanValue()) {
-        return false;
-    }
-
-    JsonNode current = actual.path(field);
-
-    // Only an explicit false -> true transition
-    // requires activation waiting.
-    return current.isBoolean() && !current.booleanValue();
-}
-
-
-
-
-
-
-
-
-
-
-
-public static boolean requiresActivationWait(
-        @NonNull String tokenOwnerId,
-        @NonNull String brand,
-        @NonNull TgsConfigurationScope scope,
-        @NonNull JsonNode request) {
-
-    JsonNode mongoConfig =
-            getBrandSpecificEmvConfiguration(
-                    tokenOwnerId,
-                    brand
-            );
-
-    return TgsConfigurationComparator.requiresActivationWait(
-            mongoConfig,
-            request,
-            scope
-    );
-}
-
-
-boolean requiresWait =
-        TgsConfigurationValidator.requiresActivationWait(
-                tokenOwnerId,
-                brand,
-                scope,
-                request
-        );
