@@ -88,3 +88,41 @@ private static boolean isEnabling(
     // requires activation waiting.
     return current.isBoolean() && !current.booleanValue();
 }
+
+
+
+
+
+
+
+
+
+
+
+public static boolean requiresActivationWait(
+        @NonNull String tokenOwnerId,
+        @NonNull String brand,
+        @NonNull TgsConfigurationScope scope,
+        @NonNull JsonNode request) {
+
+    JsonNode mongoConfig =
+            getBrandSpecificEmvConfiguration(
+                    tokenOwnerId,
+                    brand
+            );
+
+    return TgsConfigurationComparator.requiresActivationWait(
+            mongoConfig,
+            request,
+            scope
+    );
+}
+
+
+boolean requiresWait =
+        TgsConfigurationValidator.requiresActivationWait(
+                tokenOwnerId,
+                brand,
+                scope,
+                request
+        );
