@@ -1,52 +1,25 @@
-private static @NonNull ApiResponse updateAndVerify(
-        @NonNull String brand,
-        @NonNull String tokenOwnerId,
-        @NonNull ObjectNode request,
-        @NonNull TgsConfigurationScope scope) {
+private static void waitForConfiguration() {
 
-    // Read MongoDB and compare current configuration.
-    boolean configurationMatches =
-            TgsConfigurationValidator.matches(
-                    tokenOwnerId,
-                    brand,
-                    scope,
-                    request
-            );
-
-    // Determine whether waiting is necessary.
-    boolean requiresWait =
-            !configurationMatches
-                    && TgsConfigurationComparator.containsEnabledToggle(
-                            request,
-                            scope
-                    );
-
-    // Existing cache operations.
-    assertThat(GATEWAY_ACTUATOR().deleteCaches()
-            .isSuccessful()).isTrue();
-
-    assertThat(GATEWAY_ACTUATOR().getCaches()
-            .isSuccessful()).isTrue();
-
-    // Always execute TGS request.
-    ApiResponse response = GATEWAY()
-            .changeTokenOwnerState(tokenOwnerId, request);
-
-    assertThat(response.isSuccessful())
-            .isTrue();
-
-    // Wait only when configuration differs and true is requested.
-    if (requiresWait) {
-        waitForConfiguration();
-    }
-
-    // Always verify actual MongoDB configuration.
-    TgsConfigurationValidator.verify(
-            tokenOwnerId,
-            brand,
-            scope,
-            request
+    long seconds = Long.parseLong(
+            Config.get("tgs.config.wait-seconds")
     );
 
-    return response;
+    if (seconds < 0) {
+        throw new IllegalArgumentException(
+                "TGS configuration wait cannot be negative: "
+                        + seconds
+        );
+    }
+
+    try {
+        TimeUnit.SECONDS.sleep(seconds);
+
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+
+        throw new IllegalStateException(
+                "Interrupted while waiting for TGS configuration update",
+                e
+        );
+    }
 }
