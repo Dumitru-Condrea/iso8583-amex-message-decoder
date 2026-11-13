@@ -1,44 +1,52 @@
-private void printRequestSummary(@NotNull CommonRequest request) {
-    if ("PAN_ONLY".equals(request.getAuthMethod())) {
-        System.out.println(requestSummaryWithColumns(request));
-        return;
-    }
-
-    // Оставь здесь существующий вывод для остальных методов
-    System.out.println(requestSummary(request));
-}
-
-private String requestSummaryWithColumns(CommonRequest request) {
-    var crypto = request.getCryptogram();
-    var eci = request.getEci();
-
-    return """
-            Request:
-            %s
-            %s
-            %s
-            %s
-            %s
-            """.formatted(
-            row("GatewayMerchantId", request.getGatewayMerchantId(), "Cryptogram", crypto),
-            row("Method", request.getAuthMethod(), "Eci", eci),
-            row("PAN", request.getPan(), "", ""),
-            row("Year", request.getExpiryYear(), "", ""),
-            row("Month", request.getExpiryMonth(), "", "")
-    );
-}
-
-private String row(
+private record SummaryRow(
         String leftLabel,
         Object leftValue,
         String rightLabel,
         Object rightValue
-) {
-    return String.format(
-            "  %-18s : %-16s | %-10s : %s",
-            leftLabel,
-            leftValue == null ? "" : leftValue,
-            rightLabel,
-            rightValue == null ? "" : rightValue
+) {}
+
+private String requestSummaryWithColumns(CommonRequest request) {
+    var rows = List.of(
+            new SummaryRow("GatewayMerchantId", request.getGatewayMerchantId(),
+                    "Cryptogram", request.getCryptogram()),
+            new SummaryRow("Method", request.getAuthMethod(),
+                    "Eci", request.getEci()),
+            new SummaryRow("PAN", request.getPan(), "", ""),
+            new SummaryRow("Year", request.getExpiryYear(), "", ""),
+            new SummaryRow("Month", request.getExpiryMonth(), "", "")
     );
+
+    int labelWidth = rows.stream()
+            .mapToInt(row -> row.leftLabel().length())
+            .max()
+            .orElse(0);
+
+    int valueWidth = rows.stream()
+            .mapToInt(row -> value(row.leftValue()).length())
+            .max()
+            .orElse(0);
+
+    int rightLabelWidth = rows.stream()
+            .mapToInt(row -> row.rightLabel().length())
+            .max()
+            .orElse(0);
+
+    var result = new StringBuilder("Request:\n");
+
+    for (var row : rows) {
+        result.append(String.format(
+                "  %-" + labelWidth + "s : %-" + valueWidth + "s | %-" +
+                        rightLabelWidth + "s : %s%n",
+                row.leftLabel(),
+                value(row.leftValue()),
+                row.rightLabel(),
+                value(row.rightValue())
+        ));
+    }
+
+    return result.toString();
+}
+
+private String value(Object value) {
+    return value == null ? "" : value.toString();
 }
