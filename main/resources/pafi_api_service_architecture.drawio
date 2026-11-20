@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mxfile host="app.diagrams.net" modified="2026-11-20T00:00:00.000Z" agent="ChatGPT" version="24.7.17" type="device">
+  <diagram id="api-dependencies" name="API Service Dependencies">
+    <mxGraphModel dx="1250" dy="850" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="950" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="sc" value="ServiceClients" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E3A5F;strokeColor=#16304E;fontColor=#FFFFFF;fontSize=17;fontStyle=1;arcSize=14;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="605" y="55" width="235" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ctx" value="ApiContext" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0EBF8;strokeColor=#9C85BD;fontColor=#483265;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="175" y="185" width="210" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="log" value="ApiLogger" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F0EBF8;strokeColor=#9C85BD;fontColor=#483265;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="430" y="185" width="210" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="rc" value="RestClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFA;strokeColor=#5B8DB8;fontColor=#16304E;fontSize=16;fontStyle=1;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="710" y="185" width="235" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="ea" value="EmvAuthService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF1DD;strokeColor=#D4A460;fontColor=#66451C;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="405" width="200" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="emv" value="EmvService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F3EE;strokeColor=#68A18A;fontColor=#204B3B;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="55" y="310" width="200" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="gauth" value="GatewayAuthService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF1DD;strokeColor=#D4A460;fontColor=#66451C;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="405" width="220" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="gw" value="GatewayService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F3EE;strokeColor=#68A18A;fontColor=#204B3B;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="300" y="310" width="220" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="ema" value="EmvActuatorService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F3EE;strokeColor=#68A18A;fontColor=#204B3B;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="580" y="310" width="220" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="gwa" value="GatewayActuatorService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F3EE;strokeColor=#68A18A;fontColor=#204B3B;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="845" y="310" width="245" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="wire" value="WireMockClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F3EE;strokeColor=#68A18A;fontColor=#204B3B;fontSize=14;arcSize=14;" vertex="1" parent="1">
+          <mxGeometry x="580" y="425" width="220" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="title" value="Shared REST transport + API services" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#586274;" vertex="1" parent="1">
+          <mxGeometry x="600" y="540" width="430" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend" value="Solid arrows show object dependencies / reuse. API services share the RestClient instance. Database clients are outside ServiceClients." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#586274;" vertex="1" parent="1">
+          <mxGeometry x="175" y="604" width="1040" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_sc_ctx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="sc" target="ctx">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="145"/>
+              <mxPoint x="280" y="145"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_sc_log" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="sc" target="log">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="157"/>
+              <mxPoint x="535" y="157"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_sc_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="sc" target="rc">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_rc_ctx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B8999;strokeWidth=1.5;" edge="1" parent="1" source="rc" target="ctx">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="273"/>
+              <mxPoint x="280" y="273"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_rc_log" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B8999;strokeWidth=1.5;" edge="1" parent="1" source="rc" target="log">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="255"/>
+              <mxPoint x="535" y="255"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_emv_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="emv" target="rc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="160" y="284"/>
+              <mxPoint x="825" y="284"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_gw_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="gw" target="rc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="292"/>
+              <mxPoint x="825" y="292"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_ea_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="ema" target="rc">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_gwa_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="gwa" target="rc">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_emv_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B8999;strokeWidth=1.5;" edge="1" parent="1" source="emv" target="ea">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_gw_auth" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B8999;strokeWidth=1.5;" edge="1" parent="1" source="gw" target="gauth">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_auth_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="ea" target="rc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="155" y="508"/>
+              <mxPoint x="1180" y="508"/>
+              <mxPoint x="1180" y="210"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_gauth_rc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#96A0AD;strokeWidth=1.3;dashed=1;" edge="1" parent="1" source="gauth" target="rc">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="410" y="523"/>
+              <mxPoint x="1200" y="523"/>
+              <mxPoint x="1200" y="225"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_wire_ea" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#7B8999;strokeWidth=1.5;" edge="1" parent="1" source="wire" target="ema">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="construct_note" value="ServiceClients creates EMV, Gateway, both Actuator services and WireMockClient (all instances are accessible via static methods)." style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontColor=#586274;" vertex="1" parent="1">
+          <mxGeometry x="55" y="688" width="1170" height="55" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
